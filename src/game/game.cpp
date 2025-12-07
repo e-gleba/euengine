@@ -3,6 +3,7 @@
 #include "ui.hpp"
 
 #include <core-api/profiler.hpp>
+#include <core-api/profiling_events.hpp>
 
 #include <imgui.h>
 #include <spdlog/sinks/base_sink.h>
@@ -160,13 +161,17 @@ GAME_API bool game_init(euengine::engine_context* ctx)
     ctx->profiler = euengine::create_profiler();
     if (ctx->profiler != nullptr)
     {
+        // Set thread name via event system (preferred) and old interface
+        // (backward compatibility)
+        euengine::profiling_event_dispatcher::emit_thread_name("Main");
         ctx->profiler->set_thread_name("Main");
         spdlog::info("Profiler enabled");
 
         // Set profiler on engine (which will also set it on renderer)
         ctx->settings->set_profiler(ctx->profiler);
 
-        // Profile this function using the interface
+        // Profile this function using the interface (emits events
+        // automatically)
         PROFILER_ZONE(ctx->profiler, "game_init");
     }
 

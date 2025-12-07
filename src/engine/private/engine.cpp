@@ -6,6 +6,7 @@
 
 #include <core-api/camera.hpp>
 #include <core-api/profiler.hpp>
+#include <core-api/profiling_events.hpp>
 
 #include <imgui.h>
 #include <spdlog/spdlog.h>
@@ -977,8 +978,7 @@ void engine::render()
 
     // Capture frame image for profiler (if enabled) - after submit, before next
     // frame Note: This is expensive as it waits for GPU and reads back texture
-    if (context_.profiler != nullptr && profiler_frame_images_enabled_ &&
-        swapchain != nullptr)
+    if (profiler_frame_images_enabled_ && swapchain != nullptr)
     {
         capture_frame_image(swapchain, swapchain_w, swapchain_h);
     }
@@ -996,6 +996,50 @@ void engine::iterate()
     delta_time_ =
         static_cast<float>(now - last_time_) / static_cast<float>(freq);
     last_time_ = now;
+
+    // Enforce max FPS if set (works even with vsync)
+    // This must be done before clamping delta_time to ensure proper frame
+    // limiting
+    if (target_fps_ > 0.0f)
+    {
+        const float target_frame_time = 1.0f / target_fps_;
+        if (delta_time_ < target_frame_time)
+        {
+            // Sleep until we reach the target frame time
+            const float  sleep_time = target_frame_time - delta_time_;
+            const Uint64 sleep_ticks =
+                static_cast<Uint64>(sleep_time * static_cast<float>(freq));
+
+            if (sleep_ticks > 0)
+            {
+                // Use high-resolution sleep if available, otherwise busy-wait
+                // for precision
+                const Uint64 sleep_start = SDL_GetPerformanceCounter();
+                Uint64       elapsed     = 0;
+
+                // Sleep for most of the time, then busy-wait for precision
+                if (sleep_ticks > freq / 1000) // More than 1ms
+                {
+                    SDL_Delay(static_cast<Uint32>(
+                        (sleep_time - 0.002f) *
+                        1000.0f)); // Sleep most of it, leave 2ms for busy-wait
+                }
+
+                // Busy-wait for precision
+                while (elapsed < sleep_ticks)
+                {
+                    const Uint64 current = SDL_GetPerformanceCounter();
+                    elapsed              = current - sleep_start;
+                }
+
+                // Recalculate delta_time after sleep
+                const Uint64 after_sleep = SDL_GetPerformanceCounter();
+                delta_time_ = static_cast<float>(after_sleep - last_time_) /
+                              static_cast<float>(freq);
+                last_time_ = after_sleep;
+            }
+        }
+    }
 
     // Clamp delta time to avoid spiral of death
     delta_time_ = std::min(delta_time_, k_max_delta_time);
@@ -1019,9 +1063,16 @@ void engine::iterate()
     render();
 
     // Mark frame end for profiler (if enabled)
-    if (context_.profiler != nullptr && profiler_frame_marks_enabled_)
+    // Emit via event system (preferred) and old interface (backward
+    // compatibility)
+    if (profiler_frame_marks_enabled_)
     {
-        context_.profiler->mark_frame();
+        profiling_event_dispatcher::emit_frame_mark();
+
+        if (context_.profiler != nullptr)
+        {
+            context_.profiler->mark_frame();
+        }
     }
 
     // Reset accumulated mouse motion for next frame
@@ -1145,7 +1196,16 @@ void engine::capture_frame_image(SDL_GPUTexture* texture,
     auto* pixels = SDL_MapGPUTransferBuffer(device_.get(), tb, true);
     if (pixels != nullptr)
     {
-        context_.profiler->capture_frame_image(pixels, capture_w, capture_h);
+        // Emit via event system (preferred) and old interface (backward
+        // compatibility)
+        profiling_event_dispatcher::emit_frame_image(
+            pixels, capture_w, capture_h);
+
+        if (context_.profiler != nullptr)
+        {
+            context_.profiler->capture_frame_image(
+                pixels, capture_w, capture_h);
+        }
         SDL_UnmapGPUTransferBuffer(device_.get(), tb);
     }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "profiling_events.hpp"
+
 #include <cstdint>
 #include <string_view>
 
@@ -47,20 +49,49 @@ public:
 
 /// RAII helper for profiling zones
 /// Automatically ends the zone when it goes out of scope
+/// Also emits events to the profiling event system for callback-based profilers
 class profiler_zone final
 {
 public:
     profiler_zone(i_profiler* profiler, const char* name) noexcept
         : profiler_(profiler)
-        , handle_(profiler_ ? profiler_->begin_zone(name) : 0)
+        , old_handle_(0)
+        , event_handle_(0)
     {
+        if (name != nullptr)
+        {
+            if (profiler_ != nullptr)
+            {
+                // Use old interface - don't emit events to avoid double
+                // instrumentation
+                old_handle_ = profiler_->begin_zone(name);
+            }
+            else
+            {
+                // No profiler provided - use event system only
+                // Generate unique handle for event system (thread-local
+                // counter)
+                static thread_local std::uint64_t zone_counter = 1;
+                event_handle_                                  = zone_counter++;
+
+                // Emit event for callback-based profilers
+                profiling_event_dispatcher::emit_zone_begin(name,
+                                                            event_handle_);
+            }
+        }
     }
 
     ~profiler_zone() noexcept
     {
-        if (profiler_ && handle_ != 0)
+        if (profiler_ != nullptr && old_handle_ != 0)
         {
-            profiler_->end_zone(handle_);
+            // Use old interface
+            profiler_->end_zone(old_handle_);
+        }
+        else if (event_handle_ != 0)
+        {
+            // Use event system only
+            profiling_event_dispatcher::emit_zone_end(event_handle_);
         }
     }
 
@@ -69,35 +100,55 @@ public:
     profiler_zone& operator=(const profiler_zone&) = delete;
     profiler_zone(profiler_zone&& other) noexcept
         : profiler_(other.profiler_)
-        , handle_(other.handle_)
+        , old_handle_(other.old_handle_)
+        , event_handle_(other.event_handle_)
     {
-        other.profiler_ = nullptr;
-        other.handle_   = 0;
+        other.profiler_     = nullptr;
+        other.old_handle_   = 0;
+        other.event_handle_ = 0;
     }
     profiler_zone& operator=(profiler_zone&& other) noexcept
     {
         if (this != &other)
         {
-            if (profiler_ && handle_ != 0)
+            // End current zone if active
+            if (event_handle_ != 0)
             {
-                profiler_->end_zone(handle_);
+                profiling_event_dispatcher::emit_zone_end(event_handle_);
             }
-            profiler_       = other.profiler_;
-            handle_         = other.handle_;
-            other.profiler_ = nullptr;
-            other.handle_   = 0;
+            if (profiler_ != nullptr && old_handle_ != 0)
+            {
+                profiler_->end_zone(old_handle_);
+            }
+
+            // Move from other
+            profiler_           = other.profiler_;
+            old_handle_         = other.old_handle_;
+            event_handle_       = other.event_handle_;
+            other.profiler_     = nullptr;
+            other.old_handle_   = 0;
+            other.event_handle_ = 0;
         }
         return *this;
     }
 
 private:
-    i_profiler*   profiler_ = nullptr;
-    std::uint64_t handle_   = 0;
+    i_profiler*   profiler_     = nullptr;
+    std::uint64_t old_handle_   = 0; // Handle for old i_profiler interface
+    std::uint64_t event_handle_ = 0; // Handle for event system
 };
 
 /// Macro helper for creating zones (similar to Tracy's ZoneScoped)
 /// Usage: PROFILER_ZONE(profiler, "MyZoneName");
+/// This macro works with both the old i_profiler interface and the new event
+/// system
 #define PROFILER_ZONE(profiler, name)                                          \
     ::euengine::profiler_zone _profiler_zone(profiler, name)
+
+/// Macro helper for creating zones using only the event system
+/// Usage: PROFILER_ZONE_EVENT("MyZoneName");
+/// This is the preferred way for new code - profilers subscribe via callbacks
+#define PROFILER_ZONE_EVENT(name)                                              \
+    ::euengine::profiler_zone _profiler_zone_event(nullptr, name)
 
 } // namespace euengine

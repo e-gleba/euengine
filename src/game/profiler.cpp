@@ -1,10 +1,13 @@
 #include "profiler.hpp"
 
+#include <core-api/profiling_events.hpp>
+
 #ifdef TRACY_ENABLE
 #include <cstring>
 #include <thread>
 #include <tracy/Tracy.hpp>
 #include <tracy/TracyC.h>
+#include <unordered_map>
 #include <vector>
 
 // Force Tracy initialization - this ensures Tracy's static initialization
@@ -34,6 +37,10 @@ namespace
 // Tracy zones are thread-local, so we use thread-local storage
 thread_local std::vector<TracyCZoneCtx> g_active_zones;
 
+// Map from event system handles to Tracy zone contexts
+// This allows the event system to work with Tracy's thread-local zones
+thread_local std::unordered_map<std::uint64_t, TracyCZoneCtx> g_event_zones;
+
 // Helper to create a source location for a zone name
 uint64_t alloc_srcloc_for_name(const char* name, size_t name_len) noexcept
 {
@@ -49,6 +56,116 @@ uint64_t alloc_srcloc_for_name(const char* name, size_t name_len) noexcept
                                       0         // color (default)
     );
 }
+
+// Tracy event callback - subscribes to profiling events and forwards to Tracy
+void tracy_event_callback(const euengine::profiling_event& event,
+                          void*                            userdata) noexcept
+{
+    (void)userdata; // Unused
+
+    switch (event.type)
+    {
+        case euengine::profiling_event_type::zone_begin:
+        {
+            const char* zone_name = event.data.zone_begin.zone_name;
+            if (zone_name != nullptr)
+            {
+                const size_t   name_len = std::strlen(zone_name);
+                const uint64_t srcloc =
+                    alloc_srcloc_for_name(zone_name, name_len);
+                const TracyCZoneCtx ctx =
+                    ___tracy_emit_zone_begin_alloc(srcloc, 1);
+
+                // Store the zone context for this event handle
+                g_event_zones[event.data.zone_begin.zone_handle] = ctx;
+            }
+            break;
+        }
+
+        case euengine::profiling_event_type::zone_end:
+        {
+            const auto it = g_event_zones.find(event.data.zone_end.zone_handle);
+            if (it != g_event_zones.end())
+            {
+                ___tracy_emit_zone_end(it->second);
+                g_event_zones.erase(it);
+            }
+            break;
+        }
+
+        case euengine::profiling_event_type::frame_mark:
+        {
+            FrameMark;
+            break;
+        }
+
+        case euengine::profiling_event_type::thread_name_set:
+        {
+            const char* thread_name = event.data.thread_name.thread_name;
+            if (thread_name != nullptr)
+            {
+                tracy::SetThreadName(thread_name);
+            }
+            break;
+        }
+
+        case euengine::profiling_event_type::message:
+        {
+            const char* text = event.data.message.text;
+            if (text != nullptr)
+            {
+                TracyMessage(text, std::strlen(text));
+            }
+            break;
+        }
+
+        case euengine::profiling_event_type::frame_image:
+        {
+            const void*   pixels = event.data.frame_image.pixels;
+            std::uint32_t width  = event.data.frame_image.width;
+            std::uint32_t height = event.data.frame_image.height;
+            if (pixels != nullptr && width > 0 && height > 0)
+            {
+                FrameImage(pixels, width, height, 0, false);
+            }
+            break;
+        }
+    }
+}
+
+// Global callback ID for Tracy event subscription
+// NOTE: This is only used if Tracy is used via events only (not via old
+// interface)
+std::uint32_t g_tracy_callback_id = 0;
+
+// Initialize Tracy event subscription
+// Call this if you want to use Tracy via events only (not via i_profiler
+// interface)
+void init_tracy_event_subscription() noexcept
+{
+    if (g_tracy_callback_id == 0)
+    {
+        g_tracy_callback_id =
+            euengine::profiling_event_dispatcher::add_callback(
+                tracy_event_callback, nullptr);
+    }
+}
+
+// Cleanup Tracy event subscription
+void cleanup_tracy_event_subscription() noexcept
+{
+    if (g_tracy_callback_id != 0)
+    {
+        euengine::profiling_event_dispatcher::remove_callback(
+            g_tracy_callback_id);
+        g_tracy_callback_id = 0;
+    }
+}
+
+// NOTE: We do NOT automatically subscribe to events because the profiler is
+// used via the old i_profiler interface. Subscribing to events would cause
+// double instrumentation. If you want to use Tracy via events only, call
+// init_tracy_event_subscription() manually and don't use the old interface.
 } // namespace
 
 #endif
@@ -211,6 +328,11 @@ i_profiler* create_profiler() noexcept
     // Create a test zone to ensure zones work
     auto test_handle = profiler_instance.begin_zone("ProfilerInit");
     profiler_instance.end_zone(test_handle);
+
+    // NOTE: We do NOT subscribe to events here because the profiler is used via
+    // the old i_profiler interface. If we subscribed to events AND used the old
+    // interface, we'd get double instrumentation. The event system is for
+    // profilers that ONLY use callbacks (not the old interface).
 
     return &profiler_instance;
 #else
