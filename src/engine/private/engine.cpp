@@ -420,10 +420,6 @@ bool engine::is_msaa_supported(msaa_samples samples) const noexcept
         case msaa_samples::x8:
             count = SDL_GPU_SAMPLECOUNT_8;
             break;
-        case msaa_samples::x16:
-            // SDL_GPU only supports up to 8x, check 8x support for 16x
-            count = SDL_GPU_SAMPLECOUNT_8;
-            break;
     }
 
     // Check if this sample count is supported for the swapchain format
@@ -431,12 +427,6 @@ bool engine::is_msaa_supported(msaa_samples samples) const noexcept
         SDL_GetGPUSwapchainTextureFormat(device_.get(), window_.get());
     bool supported =
         SDL_GPUTextureSupportsSampleCount(device_.get(), format, count);
-
-    // For 16x, warn that it's actually 8x
-    if (samples == msaa_samples::x16 && supported)
-    {
-        // It's supported but will use 8x internally
-    }
 
     return supported;
 }

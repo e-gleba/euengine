@@ -369,9 +369,8 @@ void Renderer::ensure_msaa_targets(Uint32               width,
             sample_count = SDL_GPU_SAMPLECOUNT_4;
             break;
         case msaa_samples::x8:
-        case msaa_samples::x16:
             sample_count = SDL_GPU_SAMPLECOUNT_8;
-            break; // SDL_GPU max is 8x
+            break;
     }
 
     // Check if this sample count is supported
@@ -518,10 +517,6 @@ bool Renderer::create_wireframe_pipeline()
         case msaa_samples::x8:
             sample_count = SDL_GPU_SAMPLECOUNT_8;
             break;
-        case msaa_samples::x16:
-            // SDL_GPU may not support 16x, try 8x as fallback
-            sample_count = SDL_GPU_SAMPLECOUNT_8;
-            break;
     }
     ms_state.sample_count = sample_count;
     spdlog::debug("Creating pipeline with MSAA: {}x (sample_count={})",
@@ -651,10 +646,6 @@ bool Renderer::create_textured_pipeline()
             sample_count = SDL_GPU_SAMPLECOUNT_4;
             break;
         case msaa_samples::x8:
-            sample_count = SDL_GPU_SAMPLECOUNT_8;
-            break;
-        case msaa_samples::x16:
-            // SDL_GPU may not support 16x, try 8x as fallback
             sample_count = SDL_GPU_SAMPLECOUNT_8;
             break;
     }

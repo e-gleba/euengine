@@ -1,4 +1,5 @@
 #include "ui.hpp"
+#include "imgui_style.hpp"
 #include "scene.hpp"
 
 #include <core-api/camera.hpp>
@@ -11,7 +12,6 @@
 #include <format>
 #include <fstream>
 #include <ranges>
-#include <utility>
 
 namespace ui
 {
@@ -27,7 +27,7 @@ std::string sanitize_utf8(const std::string& str)
 
     for (std::size_t i = 0; i < str.size(); ++i)
     {
-        auto c = static_cast<unsigned char>(str[i]);
+        unsigned char c = static_cast<unsigned char>(str[i]);
 
         // Valid ASCII
         if (c < 0x80)
@@ -38,7 +38,7 @@ std::string sanitize_utf8(const std::string& str)
         else if ((c & 0xE0) == 0xC0 && i + 1 < str.size())
         {
             // 2-byte sequence
-            auto c2 = static_cast<unsigned char>(str[i + 1]);
+            unsigned char c2 = static_cast<unsigned char>(str[i + 1]);
             if ((c2 & 0xC0) == 0x80)
             {
                 result += static_cast<char>(c);
@@ -53,8 +53,8 @@ std::string sanitize_utf8(const std::string& str)
         else if ((c & 0xF0) == 0xE0 && i + 2 < str.size())
         {
             // 3-byte sequence
-            auto c2 = static_cast<unsigned char>(str[i + 1]);
-            auto c3 = static_cast<unsigned char>(str[i + 2]);
+            unsigned char c2 = static_cast<unsigned char>(str[i + 1]);
+            unsigned char c3 = static_cast<unsigned char>(str[i + 2]);
             if ((c2 & 0xC0) == 0x80 && (c3 & 0xC0) == 0x80)
             {
                 result += static_cast<char>(c);
@@ -70,9 +70,9 @@ std::string sanitize_utf8(const std::string& str)
         else if ((c & 0xF8) == 0xF0 && i + 3 < str.size())
         {
             // 4-byte sequence
-            auto c2 = static_cast<unsigned char>(str[i + 1]);
-            auto c3 = static_cast<unsigned char>(str[i + 2]);
-            auto c4 = static_cast<unsigned char>(str[i + 3]);
+            unsigned char c2 = static_cast<unsigned char>(str[i + 1]);
+            unsigned char c3 = static_cast<unsigned char>(str[i + 2]);
+            unsigned char c4 = static_cast<unsigned char>(str[i + 3]);
             if ((c2 & 0xC0) == 0x80 && (c3 & 0xC0) == 0x80 &&
                 (c4 & 0xC0) == 0x80)
             {
@@ -122,116 +122,6 @@ void load_gltf_glb_scene(const std::filesystem::path& path)
     }
 }
 
-void apply_theme()
-{
-    ImGuiStyle& s = ImGui::GetStyle();
-    ImVec4*     c = s.Colors;
-
-    // Modern dark palette
-    const ImVec4 bg_deep   = ImVec4(0.067f, 0.067f, 0.075f, 1.0f); // #111113
-    const ImVec4 bg_main   = ImVec4(0.098f, 0.098f, 0.110f, 1.0f); // #19191C
-    const ImVec4 bg_panel  = ImVec4(0.129f, 0.129f, 0.145f, 1.0f); // #212125
-    const ImVec4 bg_hover  = ImVec4(0.180f, 0.180f, 0.200f, 1.0f); // #2E2E33
-    const ImVec4 bg_active = ImVec4(0.220f, 0.220f, 0.245f, 1.0f); // #38383E
-
-    // Modern accent - gradient-like blue-cyan
-    const ImVec4 accent   = ImVec4(0.380f, 0.680f, 0.934f, 1.0f); // #61ADEE
-    const ImVec4 accent_h = ImVec4(0.480f, 0.750f, 0.970f, 1.0f); // #7AC0F8
-    const ImVec4 accent_d = ImVec4(0.280f, 0.550f, 0.800f, 1.0f); // #478CCC
-
-    // Text
-    const ImVec4 text     = ImVec4(0.950f, 0.950f, 0.960f, 1.0f);
-    const ImVec4 text_dim = ImVec4(0.550f, 0.550f, 0.580f, 1.0f);
-
-    c[ImGuiCol_Text]         = text;
-    c[ImGuiCol_TextDisabled] = text_dim;
-    c[ImGuiCol_WindowBg]     = bg_main;
-    c[ImGuiCol_ChildBg]      = bg_deep;
-    c[ImGuiCol_PopupBg] = ImVec4(bg_panel.x, bg_panel.y, bg_panel.z, 0.98f);
-    c[ImGuiCol_Border]  = ImVec4(0.20f, 0.20f, 0.22f, 0.50f);
-    c[ImGuiCol_BorderShadow]         = ImVec4(0, 0, 0, 0);
-    c[ImGuiCol_FrameBg]              = bg_panel;
-    c[ImGuiCol_FrameBgHovered]       = bg_hover;
-    c[ImGuiCol_FrameBgActive]        = bg_active;
-    c[ImGuiCol_TitleBg]              = bg_deep;
-    c[ImGuiCol_TitleBgActive]        = bg_panel;
-    c[ImGuiCol_TitleBgCollapsed]     = bg_deep;
-    c[ImGuiCol_MenuBarBg]            = bg_deep;
-    c[ImGuiCol_ScrollbarBg]          = bg_deep;
-    c[ImGuiCol_ScrollbarGrab]        = bg_hover;
-    c[ImGuiCol_ScrollbarGrabHovered] = accent_d;
-    c[ImGuiCol_ScrollbarGrabActive]  = accent;
-    c[ImGuiCol_CheckMark]            = accent;
-    c[ImGuiCol_SliderGrab]           = accent_d;
-    c[ImGuiCol_SliderGrabActive]     = accent;
-    c[ImGuiCol_Button]               = bg_hover;
-    c[ImGuiCol_ButtonHovered]        = accent_d;
-    c[ImGuiCol_ButtonActive]         = accent;
-    c[ImGuiCol_Header]               = bg_hover;
-    c[ImGuiCol_HeaderHovered]        = accent_d;
-    c[ImGuiCol_HeaderActive]         = accent;
-    c[ImGuiCol_Separator]            = ImVec4(0.25f, 0.25f, 0.28f, 1.0f);
-    c[ImGuiCol_SeparatorHovered]     = accent_d;
-    c[ImGuiCol_SeparatorActive]      = accent;
-    c[ImGuiCol_ResizeGrip]           = ImVec4(0, 0, 0, 0);
-    c[ImGuiCol_ResizeGripHovered]    = accent_d;
-    c[ImGuiCol_ResizeGripActive]     = accent;
-    c[ImGuiCol_Tab]                  = bg_panel;
-    c[ImGuiCol_TabHovered]           = accent_d;
-    c[ImGuiCol_TabActive]            = accent;
-    c[ImGuiCol_TabUnfocused]         = bg_main;
-    c[ImGuiCol_TabUnfocusedActive]   = bg_hover;
-    c[ImGuiCol_PlotLines]            = accent;
-    c[ImGuiCol_PlotLinesHovered]     = accent_h;
-    c[ImGuiCol_PlotHistogram]        = accent_d;
-    c[ImGuiCol_PlotHistogramHovered] = accent;
-    c[ImGuiCol_TableHeaderBg]        = bg_panel;
-    c[ImGuiCol_TableBorderStrong]    = bg_active;
-    c[ImGuiCol_TableBorderLight]     = bg_hover;
-    c[ImGuiCol_TableRowBg]           = ImVec4(0, 0, 0, 0);
-    c[ImGuiCol_TableRowBgAlt]        = ImVec4(1, 1, 1, 0.015f);
-    c[ImGuiCol_TextSelectedBg] = ImVec4(accent.x, accent.y, accent.z, 0.30f);
-    c[ImGuiCol_DragDropTarget] = accent_h;
-    c[ImGuiCol_NavHighlight]   = accent;
-    c[ImGuiCol_NavWindowingHighlight] = text;
-    c[ImGuiCol_NavWindowingDimBg]     = ImVec4(0.05f, 0.05f, 0.06f, 0.20f);
-    c[ImGuiCol_ModalWindowDimBg]      = ImVec4(0.03f, 0.03f, 0.04f, 0.75f);
-
-    // Modern flat metrics - Steam-like precision
-    s.WindowRounding    = 6.0f;
-    s.ChildRounding     = 4.0f;
-    s.FrameRounding     = 3.0f;
-    s.PopupRounding     = 6.0f;
-    s.ScrollbarRounding = 6.0f;
-    s.GrabRounding      = 3.0f;
-    s.TabRounding       = 4.0f;
-
-    // Improved spacing and alignment - professional look
-    s.WindowPadding     = ImVec2(14, 14);
-    s.FramePadding      = ImVec2(8, 5);
-    s.ItemSpacing       = ImVec2(10, 6);
-    s.ItemInnerSpacing  = ImVec2(8, 4);
-    s.IndentSpacing     = 22.0f;
-    s.ScrollbarSize     = 16.0f;
-    s.GrabMinSize       = 14.0f;
-    s.CellPadding       = ImVec2(6, 4);
-    s.TouchExtraPadding = ImVec2(0, 0);
-
-    s.WindowBorderSize = 0.0f;
-    s.ChildBorderSize  = 0.0f;
-    s.PopupBorderSize  = 1.0f;
-    s.FrameBorderSize  = 0.0f;
-    s.TabBorderSize    = 0.0f;
-
-    // Better text alignment
-    s.WindowTitleAlign         = ImVec2(0.0f, 0.5f); // Left-aligned titles
-    s.WindowMenuButtonPosition = ImGuiDir_None;
-    s.ColorButtonPosition      = ImGuiDir_Right;
-    s.ButtonTextAlign          = ImVec2(0.5f, 0.5f);
-    s.SelectableTextAlign      = ImVec2(0.0f, 0.0f);
-    s.DisplaySafeAreaPadding   = ImVec2(3.0f, 3.0f);
-}
-
 void draw_menu(euengine::engine_context* ctx)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 8));
@@ -243,25 +133,21 @@ void draw_menu(euengine::engine_context* ctx)
             if (ImGui::MenuItem("Hot Reload", "F5"))
             {
                 log(2, "Shader hot reload triggered");
-                if (ctx->shaders != nullptr)
+                if (ctx->shaders)
                 {
                     ctx->shaders->enable_hot_reload(false);
                     ctx->shaders->enable_hot_reload(true);
                 }
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Reload shaders and game module");
-            }
             ImGui::Separator();
             if (ImGui::MenuItem("Load Scene...", "Ctrl+O"))
             {
                 g_show_file_dialog = true;
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Load a glTF/GLB scene file");
-            }
             if (ImGui::MenuItem("Clear Scene", "Ctrl+N"))
             {
                 // Remove all models except keep camera
@@ -272,9 +158,7 @@ void draw_menu(euengine::engine_context* ctx)
                 log(2, "Scene cleared");
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Remove all objects from the scene");
-            }
             ImGui::Separator();
             if (ImGui::MenuItem("Rescan Assets"))
             {
@@ -283,14 +167,10 @@ void draw_menu(euengine::engine_context* ctx)
                 scene::scan_scenes();
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Refresh asset lists from disk");
-            }
             ImGui::Separator();
             if (ImGui::MenuItem("Exit", "Alt+F4"))
-            {
                 ctx->settings->request_quit();
-            }
             ImGui::EndMenu();
         }
 
@@ -310,9 +190,7 @@ void draw_menu(euengine::engine_context* ctx)
                 g_show_shortcuts = true;
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("View all available keyboard shortcuts");
-            }
             ImGui::Separator();
             if (ImGui::MenuItem("Reset Window Layout"))
             {
@@ -341,10 +219,8 @@ void draw_menu(euengine::engine_context* ctx)
                 log(2, "Window layout will reset on next frame");
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip(
                     "Reset all window positions and sizes to defaults");
-            }
             ImGui::EndMenu();
         }
 
@@ -352,28 +228,20 @@ void draw_menu(euengine::engine_context* ctx)
         {
             ImGui::MenuItem("Wireframe Mode", "Tab", &g_wireframe);
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Toggle wireframe rendering mode");
-            }
             ImGui::MenuItem("Auto Animate", "Space", &g_auto_rotate);
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Toggle automatic object animation");
-            }
             ImGui::Separator();
             if (ImGui::ColorEdit3("Background",
                                   g_sky_color,
                                   ImGuiColorEditFlags_NoInputs |
                                       ImGuiColorEditFlags_NoLabel))
-            {
                 scene::apply_sky();
-            }
             ImGui::SameLine();
             ImGui::Text("Background Color");
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Change the scene background color");
-            }
             ImGui::EndMenu();
         }
 
@@ -384,9 +252,7 @@ void draw_menu(euengine::engine_context* ctx)
                 g_show_shortcuts = true;
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("View all keyboard shortcuts");
-            }
             ImGui::EndMenu();
         }
 
@@ -410,9 +276,7 @@ void draw_menu(euengine::engine_context* ctx)
 void draw_scene(euengine::engine_context* ctx)
 {
     if (!g_show_hierarchy)
-    {
         return;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(16, 40),
@@ -441,10 +305,8 @@ void draw_scene(euengine::engine_context* ctx)
                 ImGui::PopStyleColor();
                 ImGui::DragFloat3("##pos", &cam.position.x, 0.2f);
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip("Camera position in world space\nDrag to "
                                       "adjust or use WASD to move");
-                }
 
                 ImGui::Spacing();
                 ImGui::PushStyleColor(ImGuiCol_Text,
@@ -453,15 +315,11 @@ void draw_scene(euengine::engine_context* ctx)
                 ImGui::PopStyleColor();
                 ImGui::SliderFloat("Speed", &cam.move_speed, 1.0f, 50.0f);
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip(
                         "Camera movement speed\nHold Shift to move faster");
-                }
                 ImGui::SliderFloat("FOV", &cam.fov, 30.0f, 120.0f);
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip("Field of view angle in degrees");
-                }
 
                 ImGui::Spacing();
                 if (ImGui::Button("Reset Camera", ImVec2(-1, 28)))
@@ -471,10 +329,8 @@ void draw_scene(euengine::engine_context* ctx)
                     cam.yaw      = 0.0f;
                 }
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip(
                         "Reset camera to default position and rotation");
-                }
             }
         }
 
@@ -488,28 +344,18 @@ void draw_scene(euengine::engine_context* ctx)
             ImGui::PopStyleColor();
 
             if (ImGui::ColorEdit3("Sky", g_sky_color))
-            {
                 scene::apply_sky();
-            }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Background sky color");
-            }
             if (ImGui::ColorEdit3("Grid", g_grid_color))
-            {
                 scene::rebuild_grid();
-            }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Grid line color");
-            }
 
             ImGui::Spacing();
             ImGui::Checkbox("Origin Axis", &scene::g_show_origin);
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Show X/Y/Z axis lines at world origin");
-            }
         }
 
         // Objects list
@@ -528,9 +374,7 @@ void draw_scene(euengine::engine_context* ctx)
                 g_show_browser = true;
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Open Asset Browser to add objects");
-            }
             ImGui::EndGroup();
 
             ImGui::Spacing();
@@ -544,9 +388,7 @@ void draw_scene(euengine::engine_context* ctx)
                                      obj_filter,
                                      sizeof(obj_filter));
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Filter objects by name");
-            }
             if (obj_filter[0] != '\0')
             {
                 ImGui::SameLine();
@@ -555,9 +397,7 @@ void draw_scene(euengine::engine_context* ctx)
                     obj_filter[0] = '\0';
                 }
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip("Clear search filter");
-                }
             }
             ImGui::EndGroup();
 
@@ -571,14 +411,12 @@ void draw_scene(euengine::engine_context* ctx)
                     scene::g_selected_set.clear();
                 }
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip(
                         "Deselect all objects\nCtrl+Click to multi-select");
-                }
             }
 
             ImGui::Spacing();
-            ImGui::BeginChild("##objs", ImVec2(0, -1), 1);
+            ImGui::BeginChild("##objs", ImVec2(0, -1), true);
 
             for (std::size_t i = 0; i < scene::g_models.size(); ++i)
             {
@@ -587,13 +425,11 @@ void draw_scene(euengine::engine_context* ctx)
                 // Apply filter
                 if (obj_filter[0] != '\0' &&
                     m.name.find(obj_filter) == std::string::npos)
-                {
                     continue;
-                }
 
-                bool sel =
-                    (std::cmp_equal(i, scene::g_selected)) ||
-                    (scene::g_selected_set.contains(static_cast<int>(i)));
+                bool sel = (static_cast<int>(i) == scene::g_selected) ||
+                           (scene::g_selected_set.find(static_cast<int>(i)) !=
+                            scene::g_selected_set.end());
 
                 // Enhanced visual indicators
                 ImVec4      col    = ImVec4(0.55f, 0.55f, 0.58f, 1.0f);
@@ -647,7 +483,8 @@ void draw_scene(euengine::engine_context* ctx)
                     if (ctrl_held)
                     {
                         // Toggle selection in multi-select set
-                        if (scene::g_selected_set.contains(idx))
+                        if (scene::g_selected_set.find(idx) !=
+                            scene::g_selected_set.end())
                         {
                             scene::g_selected_set.erase(idx);
                             // If this was the primary selection, clear it
@@ -722,9 +559,7 @@ void draw_scene(euengine::engine_context* ctx)
 void draw_inspector()
 {
     if (!g_show_inspector)
-    {
         return;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
     // Position below Scene window (Scene is at y=40, height=600, so start at
@@ -783,10 +618,8 @@ void draw_inspector()
                     }
                 }
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip("Object position in world space\nHold "
                                       "Ctrl for finer control");
-                }
 
                 if (ImGui::DragFloat3(
                         "Rotation", &m.transform.rotation.x, 0.5f))
@@ -800,19 +633,13 @@ void draw_inspector()
                         std::fmod(m.transform.rotation.z + 360.0f, 360.0f);
                 }
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip("Rotation in degrees (X, Y, Z)");
-                }
 
                 float sc = m.transform.scale.x;
                 if (ImGui::SliderFloat("Scale", &sc, 0.01f, 10.0f))
-                {
                     m.transform.scale = glm::vec3(sc);
-                }
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip("Uniform scale factor (0.01 - 10.0)");
-                }
             }
 
             // Color tint (especially for duck)
@@ -833,9 +660,7 @@ void draw_inspector()
                         m.color_tint = glm::vec3(color[0], color[1], color[2]);
                     }
                     if (ImGui::IsItemHovered())
-                    {
                         ImGui::SetTooltip("Color tint applied to the model");
-                    }
                 }
             }
 
@@ -844,9 +669,7 @@ void draw_inspector()
             {
                 ImGui::Checkbox("Rotate", &m.animate);
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip("Enable continuous rotation animation");
-                }
                 if (m.animate)
                 {
                     ImGui::SameLine();
@@ -854,16 +677,12 @@ void draw_inspector()
                     ImGui::SliderFloat(
                         "##speed", &m.anim_speed, 0.0f, 100.0f, "%.0f deg/s");
                     if (ImGui::IsItemHovered())
-                    {
                         ImGui::SetTooltip(
                             "Rotation speed in degrees per second");
-                    }
                 }
                 ImGui::Checkbox("Hover", &m.hover);
                 if (ImGui::IsItemHovered())
-                {
                     ImGui::SetTooltip("Enable vertical hovering animation");
-                }
             }
 
             ImGui::Separator();
@@ -885,9 +704,7 @@ void draw_inspector()
                 log(2, "Teleported object to camera: " + safe_name);
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Move this object to the camera position");
-            }
             ImGui::PopStyleColor(2);
 
             ImGui::Spacing();
@@ -903,9 +720,7 @@ void draw_inspector()
                 log(2, "Duplicated object: " + safe_name);
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Create a copy of this object");
-            }
             ImGui::PopStyleColor(2);
 
             ImGui::Spacing();
@@ -920,9 +735,7 @@ void draw_inspector()
                 log(2, "Deleted object: " + safe_name);
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Remove this object from the scene");
-            }
             ImGui::PopStyleColor(2);
         }
         else
@@ -942,9 +755,7 @@ void draw_inspector()
 void draw_browser()
 {
     if (!g_show_browser)
-    {
         return;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 300, 40),
@@ -966,9 +777,7 @@ void draw_browser()
             log(2, "Asset browser refreshed");
         }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Rescan for model files");
-        }
         ImGui::SameLine();
 
         std::size_t visible_count =
@@ -1000,13 +809,9 @@ void draw_browser()
                                      "Search models...",
                                      filter_buf,
                                      sizeof(filter_buf)))
-        {
             g_browser_filter = filter_buf;
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Filter models by filename");
-        }
         if (g_browser_filter[0] != '\0')
         {
             ImGui::SameLine();
@@ -1015,15 +820,13 @@ void draw_browser()
                 g_browser_filter.clear();
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Clear search filter");
-            }
         }
         ImGui::EndGroup();
 
         ImGui::Spacing();
 
-        ImGui::BeginChild("##list", ImVec2(0, -40), 1);
+        ImGui::BeginChild("##list", ImVec2(0, -40), true);
         for (std::size_t i = 0; i < scene::g_model_files.size(); ++i)
         {
             auto name = std::filesystem::path(scene::g_model_files[i])
@@ -1033,9 +836,7 @@ void draw_browser()
             // Apply filter
             if (!g_browser_filter.empty() &&
                 name.find(g_browser_filter) == std::string::npos)
-            {
                 continue;
-            }
 
             auto safe_name = sanitize_utf8(name);
             bool sel       = std::cmp_equal(i, scene::g_browser_sel);
@@ -1047,9 +848,7 @@ void draw_browser()
             std::ranges::transform(ext, ext.begin(), ::tolower);
 
             if (ImGui::Selectable(safe_name.c_str(), sel))
-            {
                 scene::g_browser_sel = static_cast<int>(i);
-            }
 
             if (ImGui::IsItemHovered())
             {
@@ -1072,9 +871,7 @@ void draw_browser()
                               ok ? ImVec4(0.28f, 0.55f, 0.80f, 1.0f)
                                  : ImVec4(0.2f, 0.2f, 0.22f, 1.0f));
         if (!ok)
-        {
             ImGui::BeginDisabled();
-        }
         if (ImGui::Button("Add to Scene", ImVec2(-1, 32)))
         {
             auto* m =
@@ -1082,7 +879,7 @@ void draw_browser()
                                      scene::g_browser_sel)],
                                  { 0, 0, 6 },
                                  0.1f);
-            if (m != nullptr)
+            if (m)
             {
                 m->animate  = true;
                 int new_idx = static_cast<int>(scene::g_models.size()) - 1;
@@ -1093,13 +890,9 @@ void draw_browser()
             }
         }
         if (ImGui::IsItemHovered() && ok)
-        {
             ImGui::SetTooltip("Add selected model to the scene at origin");
-        }
         if (!ok)
-        {
             ImGui::EndDisabled();
-        }
         ImGui::PopStyleColor();
     }
     ImGui::End();
@@ -1107,10 +900,8 @@ void draw_browser()
 
 void draw_audio(euengine::engine_context* ctx)
 {
-    if (!g_show_audio || (ctx->audio == nullptr))
-    {
+    if (!g_show_audio || !ctx->audio)
         return;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x - 300, 420),
@@ -1133,14 +924,12 @@ void draw_audio(euengine::engine_context* ctx)
                                      "Search audio...",
                                      filter_buf,
                                      sizeof(filter_buf)))
-        {
             g_audio_filter = filter_buf;
-        }
 
         ImGui::Spacing();
 
         // Track list
-        ImGui::BeginChild("##tracks", ImVec2(0, -50), 1);
+        ImGui::BeginChild("##tracks", ImVec2(0, -50), true);
         for (std::size_t i = 0; i < scene::g_audio.size(); ++i)
         {
             auto& t = scene::g_audio[i];
@@ -1148,30 +937,22 @@ void draw_audio(euengine::engine_context* ctx)
             // Apply filter
             if (!g_audio_filter.empty() &&
                 t.name.find(g_audio_filter) == std::string::npos)
-            {
                 continue;
-            }
 
             bool playing = std::cmp_equal(i, scene::g_playing);
 
             ImVec4 col = ImVec4(0.85f, 0.85f, 0.88f, 1.0f);
             if (playing)
-            {
                 col = ImVec4(0.40f, 0.90f, 0.55f, 1.0f);
-            }
             else if (t.is_sfx)
-            {
                 col = ImVec4(0.40f, 0.75f, 0.95f, 1.0f);
-            }
 
             ImGui::PushStyleColor(ImGuiCol_Text, col);
             auto safe_name = sanitize_utf8(t.name);
             if (ImGui::Selectable(safe_name.c_str(), playing))
             {
                 if (t.handle == euengine::invalid_music)
-                {
                     t.handle = ctx->audio->load_music(t.path);
-                }
                 if (t.handle != euengine::invalid_music)
                 {
                     ctx->audio->play_music(t.handle, !t.is_sfx);
@@ -1193,18 +974,14 @@ void draw_audio(euengine::engine_context* ctx)
         if (playing && !paused)
         {
             if (ImGui::Button("Pause", ImVec2(bw, 28)))
-            {
                 ctx->audio->pause_music();
-            }
         }
         else
         {
             ImGui::PushStyleColor(ImGuiCol_Button,
                                   ImVec4(0.28f, 0.55f, 0.80f, 1.0f));
             if (ImGui::Button("Play", ImVec2(bw, 28)))
-            {
                 ctx->audio->resume_music();
-            }
             ImGui::PopStyleColor();
         }
         ImGui::SameLine();
@@ -1218,9 +995,7 @@ void draw_audio(euengine::engine_context* ctx)
         // Volume
         ImGui::SetNextItemWidth(-1);
         if (ImGui::SliderFloat("##vol", &g_volume, 0.0f, 100.0f, "Vol: %.0f%%"))
-        {
             ctx->audio->set_music_volume(g_volume / 100.0f);
-        }
 
         ImGui::PopStyleVar();
     }
@@ -1230,9 +1005,7 @@ void draw_audio(euengine::engine_context* ctx)
 void draw_engine(euengine::engine_context* ctx)
 {
     if (!g_show_engine)
-    {
         return;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
     // Position above Performance Metrics (which is at bottom-right)
@@ -1260,9 +1033,7 @@ void draw_engine(euengine::engine_context* ctx)
 
         bool fs = ctx->settings->is_fullscreen();
         if (ImGui::Checkbox("Fullscreen (F11)", &fs))
-        {
             ctx->settings->set_fullscreen(fs);
-        }
 
         ImGui::Spacing();
 
@@ -1274,20 +1045,14 @@ void draw_engine(euengine::engine_context* ctx)
 
         int vs = static_cast<int>(ctx->settings->get_vsync());
         if (ImGui::RadioButton("Enabled", vs == 1))
-        {
             ctx->settings->set_vsync(euengine::vsync_mode::enabled);
-        }
         ImGui::SameLine();
         if (ImGui::RadioButton("Adaptive", vs == 2))
-        {
             ctx->settings->set_vsync(euengine::vsync_mode::adaptive);
-        }
 
         // If somehow disabled, force to enabled
         if (vs == 0)
-        {
             ctx->settings->set_vsync(euengine::vsync_mode::enabled);
-        }
 
         ImGui::Spacing();
 
@@ -1314,63 +1079,36 @@ void draw_engine(euengine::engine_context* ctx)
             ctx->settings->is_msaa_supported(euengine::msaa_samples::x4);
         bool msaa8_ok =
             ctx->settings->is_msaa_supported(euengine::msaa_samples::x8);
-        bool msaa16_ok =
-            ctx->settings->is_msaa_supported(euengine::msaa_samples::x16);
 
         if (ImGui::RadioButton("Off", msaa == 1))
-        {
             ctx->settings->set_msaa(euengine::msaa_samples::none);
-        }
         ImGui::SameLine();
 
         ImGui::BeginDisabled(!msaa2_ok);
         if (ImGui::RadioButton("2x", msaa == 2))
-        {
             ctx->settings->set_msaa(euengine::msaa_samples::x2);
-        }
         ImGui::EndDisabled();
         ImGui::SameLine();
 
         ImGui::BeginDisabled(!msaa4_ok);
         if (ImGui::RadioButton("4x", msaa == 4))
-        {
             ctx->settings->set_msaa(euengine::msaa_samples::x4);
-        }
         ImGui::EndDisabled();
         ImGui::SameLine();
 
         ImGui::BeginDisabled(!msaa8_ok);
         if (ImGui::RadioButton("8x", msaa == 8))
-        {
             ctx->settings->set_msaa(euengine::msaa_samples::x8);
-        }
         ImGui::EndDisabled();
-
-        ImGui::SameLine();
-        ImGui::BeginDisabled(!msaa16_ok);
-        if (ImGui::RadioButton("16x*", msaa == 16))
-        {
-            ctx->settings->set_msaa(euengine::msaa_samples::x16);
-        }
-        ImGui::EndDisabled();
-        if (msaa == 16)
-        {
-            ImGui::SameLine();
-            ImGui::TextColored(ImVec4(0.95f, 0.75f, 0.30f, 1.0f), "(uses 8x)");
-        }
         ImGui::Spacing();
 
         // FXAA (post-processing)
         bool fxaa = ctx->settings->is_fxaa_enabled();
         if (ImGui::Checkbox("FXAA (Post-Process)", &fxaa))
-        {
             ctx->settings->set_fxaa_enabled(fxaa);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip(
                 "Fast Approximate Anti-Aliasing (post-processing)");
-        }
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -1384,14 +1122,10 @@ void draw_engine(euengine::engine_context* ctx)
         float render_scale = ctx->settings->get_render_scale();
         if (ImGui::SliderFloat(
                 "Render Scale", &render_scale, 0.25f, 4.0f, "%.2fx"))
-        {
             ctx->settings->set_render_scale(render_scale);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Internal resolution multiplier (0.25x = "
                               "quarter, 1.0x = native, 4.0x = supersampling)");
-        }
 
         // Texture Quality
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
@@ -1401,50 +1135,34 @@ void draw_engine(euengine::engine_context* ctx)
 
         int tex_filter = static_cast<int>(ctx->settings->get_texture_filter());
         if (ImGui::RadioButton("Nearest", tex_filter == 0))
-        {
             ctx->settings->set_texture_filter(
                 euengine::i_engine_settings::texture_filter::nearest);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip(
                 "Pixelated, fastest - applies to newly loaded textures");
-        }
         ImGui::SameLine();
         if (ImGui::RadioButton("Linear", tex_filter == 1))
-        {
             ctx->settings->set_texture_filter(
                 euengine::i_engine_settings::texture_filter::linear);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip(
                 "Smooth, good quality - applies to newly loaded textures");
-        }
         ImGui::SameLine();
         if (ImGui::RadioButton("Trilinear", tex_filter == 2))
-        {
             ctx->settings->set_texture_filter(
                 euengine::i_engine_settings::texture_filter::trilinear);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip(
                 "Best quality with mipmaps - applies to newly loaded textures");
-        }
 
         // Max Anisotropy
         float max_aniso = ctx->settings->get_max_anisotropy();
         if (ImGui::SliderFloat(
                 "Anisotropic Filtering", &max_aniso, 1.0f, 16.0f, "%.0fx"))
-        {
             ctx->settings->set_max_anisotropy(max_aniso);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip(
                 "Improves texture quality at oblique angles (1x-16x)");
-        }
 
         ImGui::Spacing();
         ImGui::Separator();
@@ -1462,31 +1180,19 @@ void draw_engine(euengine::engine_context* ctx)
 
         int frames = static_cast<int>(ctx->settings->get_frames_in_flight());
         if (ImGui::RadioButton("Single (1)", frames == 1))
-        {
             ctx->settings->set_frames_in_flight(1);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Lowest latency, may cause stuttering");
-        }
         ImGui::SameLine();
         if (ImGui::RadioButton("Double (2)", frames == 2))
-        {
             ctx->settings->set_frames_in_flight(2);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Balanced latency and smoothness (default)");
-        }
         ImGui::SameLine();
         if (ImGui::RadioButton("Triple (3)", frames == 3))
-        {
             ctx->settings->set_frames_in_flight(3);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Smoothest, higher latency");
-        }
 
         // Render Distance
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
@@ -1497,14 +1203,10 @@ void draw_engine(euengine::engine_context* ctx)
         float render_dist = ctx->settings->get_render_distance();
         if (ImGui::SliderFloat(
                 "##render_dist", &render_dist, 10.0f, 10000.0f, "%.0f units"))
-        {
             ctx->settings->set_render_distance(render_dist);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Maximum rendering distance (far plane). Objects "
                               "beyond this distance are not rendered.");
-        }
 
         ImGui::Spacing();
 
@@ -1515,54 +1217,34 @@ void draw_engine(euengine::engine_context* ctx)
 
         float gamma = ctx->settings->get_gamma();
         if (ImGui::SliderFloat("Gamma", &gamma, 1.0f, 3.0f, "%.2f"))
-        {
             ctx->settings->set_gamma(gamma);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Display gamma correction (default: 2.2)");
-        }
 
         float brightness = ctx->settings->get_brightness();
         if (ImGui::SliderFloat("Brightness", &brightness, -1.0f, 1.0f, "%.2f"))
-        {
             ctx->settings->set_brightness(brightness);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Brightness adjustment (default: 0)");
-        }
 
         float contrast = ctx->settings->get_contrast();
         if (ImGui::SliderFloat("Contrast", &contrast, 0.5f, 2.0f, "%.2f"))
-        {
             ctx->settings->set_contrast(contrast);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Contrast adjustment (default: 1.0)");
-        }
 
         float saturation = ctx->settings->get_saturation();
         if (ImGui::SliderFloat("Saturation", &saturation, 0.0f, 2.0f, "%.2f"))
-        {
             ctx->settings->set_saturation(saturation);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Color saturation (0.0 = grayscale, 1.0 = "
                               "normal, 2.0 = vibrant)");
-        }
 
         float vignette = ctx->settings->get_vignette();
         if (ImGui::SliderFloat("Vignette", &vignette, 0.0f, 1.0f, "%.2f"))
-        {
             ctx->settings->set_vignette(vignette);
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Darken screen edges (0.0 = off, 1.0 = maximum)");
-        }
 
         if (ImGui::Button("Reset Post-Processing", ImVec2(-1, 0)))
         {
@@ -1579,13 +1261,11 @@ void draw_engine(euengine::engine_context* ctx)
         ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "Shaders");
         ImGui::Separator();
 
-        if (ctx->shaders != nullptr)
+        if (ctx->shaders)
         {
             bool hot = ctx->shaders->hot_reload_enabled();
             if (ImGui::Checkbox("Enable Hot Reload", &hot))
-            {
                 ctx->shaders->enable_hot_reload(hot);
-            }
 
             if (ImGui::Button("Reload Now (F5)", ImVec2(-1, 28)))
             {
@@ -1610,13 +1290,9 @@ void draw_engine(euengine::engine_context* ctx)
             float kb = static_cast<float>(scene::g_lib_size) / 1024.0f;
             float mb = kb / 1024.0f;
             if (mb >= 1.0f)
-            {
                 ImGui::Text("%s", std::format("Size: {:.2f} MB", mb).c_str());
-            }
             else
-            {
                 ImGui::Text("%s", std::format("Size: {:.1f} KB", kb).c_str());
-            }
 
             // File timestamp
             std::filesystem::path p(scene::g_lib_path);
@@ -1647,7 +1323,7 @@ void draw_engine(euengine::engine_context* ctx)
             if (ImGui::Button("Hot Reload Module (F5)", ImVec2(-1, 32)))
             {
                 log(2, "Game module hot reload triggered");
-                if (ctx->settings != nullptr)
+                if (ctx->settings)
                 {
                     if (ctx->settings->reload_game())
                     {
@@ -1671,9 +1347,7 @@ void draw_engine(euengine::engine_context* ctx)
 void draw_stats(euengine::engine_context* ctx)
 {
     if (!g_show_stats)
-    {
         return;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
 
@@ -1805,9 +1479,7 @@ void draw_stats(euengine::engine_context* ctx)
 void draw_console()
 {
     if (!g_show_console)
-    {
         return;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(ImVec2(16, io.DisplaySize.y - 280),
@@ -1829,9 +1501,7 @@ void draw_console()
             log(2, "Console cleared");
         }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Clear all log entries");
-        }
         ImGui::SameLine();
 
         // Enhanced filter input with clear button
@@ -1841,13 +1511,9 @@ void draw_console()
             filter_buf, g_console_filter.c_str(), sizeof(filter_buf) - 1);
         if (ImGui::InputTextWithHint(
                 "##filter", "Filter...", filter_buf, sizeof(filter_buf)))
-        {
             g_console_filter = filter_buf;
-        }
         if (ImGui::IsItemHovered())
-        {
             ImGui::SetTooltip("Filter log entries by text");
-        }
         if (g_console_filter[0] != '\0')
         {
             ImGui::SameLine();
@@ -1856,9 +1522,7 @@ void draw_console()
                 g_console_filter.clear();
             }
             if (ImGui::IsItemHovered())
-            {
                 ImGui::SetTooltip("Clear filter");
-            }
         }
         ImGui::SameLine();
 
@@ -1880,7 +1544,7 @@ void draw_console()
 
         // Enhanced log view with better formatting
         ImGui::BeginChild(
-            "##log", ImVec2(0, 0), 1, ImGuiWindowFlags_HorizontalScrollbar);
+            "##log", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
 
         bool should_scroll = false;
         for (const auto& e : g_log)
@@ -1888,9 +1552,7 @@ void draw_console()
             // Apply filter
             if (!g_console_filter.empty() &&
                 e.message.find(g_console_filter) == std::string::npos)
-            {
                 continue;
-            }
 
             // Timestamp with better formatting
             auto time_str = std::format("[{:.1f}s]", e.time);
@@ -1900,7 +1562,7 @@ void draw_console()
 
             // Level tag with consistent width
             ImVec4      col;
-            const char* tag = nullptr;
+            const char* tag;
             switch (e.level)
             {
                 case 0:
@@ -1951,9 +1613,7 @@ void draw_console()
 void draw_shortcuts()
 {
     if (!g_show_shortcuts)
-    {
         return;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(
@@ -2133,9 +1793,7 @@ void log(int level, const std::string& msg)
 {
     g_log.push_back({ msg, level, g_time });
     if (g_log.size() > g_log_max)
-    {
         g_log.pop_front();
-    }
     g_log_scroll = true;
 }
 
@@ -2146,7 +1804,7 @@ void log_clear()
 
 void init()
 {
-    apply_theme();
+    apply_modern_theme();
 }
 
 void draw(euengine::engine_context* ctx)
@@ -2188,9 +1846,7 @@ void draw(euengine::engine_context* ctx)
 void draw_file_dialog()
 {
     if (!g_show_file_dialog)
-    {
         return;
-    }
 
     ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextWindowPos(
@@ -2235,7 +1891,7 @@ void draw_file_dialog()
         if (ImGui::Button("Home", ImVec2(80, 0)))
         {
             g_file_dialog_current_path = std::filesystem::path(
-                (std::getenv("HOME") != nullptr) ? std::getenv("HOME") : ".");
+                std::getenv("HOME") ? std::getenv("HOME") : ".");
             g_file_dialog_selected_file.clear();
         }
         ImGui::SameLine();
@@ -2256,7 +1912,7 @@ void draw_file_dialog()
         // File list
         ImGui::BeginChild("##file_list",
                           ImVec2(0, -80),
-                          1,
+                          true,
                           ImGuiWindowFlags_HorizontalScrollbar);
 
         try
@@ -2290,9 +1946,7 @@ void draw_file_dialog()
                           bool a_is_dir = std::filesystem::is_directory(a);
                           bool b_is_dir = std::filesystem::is_directory(b);
                           if (a_is_dir != b_is_dir)
-                          {
                               return a_is_dir > b_is_dir; // Directories first
-                          }
                           return a.filename().string() < b.filename().string();
                       });
 
@@ -2304,9 +1958,7 @@ void draw_file_dialog()
                 bool is_gltf = !is_dir && (ext == ".gltf" || ext == ".glb");
 
                 if (!is_dir && !is_gltf)
-                {
                     continue; // Skip non-glTF files
-                }
 
                 std::string name = sanitize_utf8(entry.filename().string());
                 // Compare normalized paths for selection
@@ -2479,18 +2131,12 @@ void draw_file_dialog()
                         std::filesystem::file_size(g_file_dialog_selected_file);
                     std::string size_str;
                     if (file_size < 1024)
-                    {
                         size_str = std::to_string(file_size) + " B";
-                    }
                     else if (file_size < 1024 * 1024)
-                    {
                         size_str = std::to_string(file_size / 1024) + " KB";
-                    }
                     else
-                    {
                         size_str =
                             std::to_string(file_size / (1024 * 1024)) + " MB";
-                    }
 
                     ImGui::SameLine();
                     ImGui::PushStyleColor(ImGuiCol_Text,
@@ -2542,13 +2188,11 @@ void draw_file_dialog()
         float button_width    = 120.0f;
         float spacing         = ImGui::GetStyle().ItemSpacing.x;
         float available_width = ImGui::GetContentRegionAvail().x;
-        float buttons_width   = (button_width * 2) + spacing;
+        float buttons_width   = button_width * 2 + spacing;
         float offset          = (available_width - buttons_width) * 0.5f;
 
         if (offset > 0)
-        {
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
-        }
 
         ImGui::BeginDisabled(!has_selection);
         ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.9f, 1.0f));
