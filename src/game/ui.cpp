@@ -4,7 +4,12 @@
 
 #include <core-api/camera.hpp>
 #include <imgui.h>
+#include <implot.h>
 #include <spdlog/spdlog.h>
+
+#ifdef TRACY_ENABLE
+#include <tracy/Tracy.hpp>
+#endif
 
 #include <algorithm>
 #include <cstring>
@@ -1346,14 +1351,18 @@ void draw_engine(euengine::engine_context* ctx)
 
 void draw_stats(euengine::engine_context* ctx)
 {
+#ifdef TRACY_ENABLE
+    ZoneScopedN("UI::draw_stats");
+#endif
+
     if (!g_show_stats)
         return;
 
     ImGuiIO& io = ImGui::GetIO();
 
     // Enhanced floating overlay - bottom right, larger
-    float w = 380.0f;
-    float h = 280.0f;
+    float w = 450.0f;
+    float h = 400.0f;
     ImGui::SetNextWindowPos(
         ImVec2(io.DisplaySize.x - w - 16, io.DisplaySize.y - h - 40),
         g_reset_window_layout ? ImGuiCond_Always : ImGuiCond_FirstUseEver);
@@ -1369,108 +1378,171 @@ void draw_stats(euengine::engine_context* ctx)
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12, 10));
 
     // Use built-in close button like engine settings window
-    if (ImGui::Begin("Performance Metrics", &g_show_stats, flags))
+    if (ImGui::Begin("Performance Monitor", &g_show_stats, flags))
     {
         ImGui::Separator();
 
-        // Current stats
-        auto perf_text = std::format("{:.2f} ms  |  {:.0f} FPS",
-                                     ctx->time.delta * 1000.0f,
-                                     ctx->time.fps);
-        ImGui::Text("%s", perf_text.c_str());
-
-        // FPS stats
-        if (scene::g_max_fps > 0.0f)
-        {
-            auto fps_stats =
-                std::format("FPS: Min {:.0f} | Avg {:.0f} | Max {:.0f}",
-                            scene::g_min_fps,
-                            scene::g_avg_fps,
-                            scene::g_max_fps);
-            ImGui::TextColored(
-                ImVec4(0.55f, 0.55f, 0.58f, 1.0f), "%s", fps_stats.c_str());
-        }
-
-        auto frame_text = std::format("Frame {}  |  {:.1f}s elapsed",
-                                      ctx->time.frame_count,
-                                      ctx->time.elapsed);
-        ImGui::TextColored(
-            ImVec4(0.55f, 0.55f, 0.58f, 1.0f), "%s", frame_text.c_str());
-
-        // Render stats
-        auto render_text = std::format("Draw Calls: {}  |  Triangles: ~{}",
-                                       scene::g_draw_calls,
-                                       scene::g_triangles);
-        ImGui::TextColored(
-            ImVec4(0.55f, 0.55f, 0.58f, 1.0f), "%s", render_text.c_str());
+        // Current FPS - large and prominent
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.40f, 0.80f, 0.50f, 1.0f));
+        ImGui::PushFont(nullptr); // Use default font but larger
+        auto fps_text = std::format("{:.0f} FPS", ctx->time.fps);
+        ImGui::Text("%s", fps_text.c_str());
+        ImGui::PopFont();
+        ImGui::PopStyleColor();
 
         ImGui::Spacing();
 
-        // Performance graphs using ImGui PlotLines
+        // Stats grid
+        if (ImGui::BeginTable("##stats", 2, ImGuiTableFlags_SizingStretchProp))
+        {
+            ImGui::TableSetupColumn(
+                "Label", ImGuiTableColumnFlags_WidthFixed, 120.0f);
+            ImGui::TableSetupColumn("Value",
+                                    ImGuiTableColumnFlags_WidthStretch);
+
+            // Frame time
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
+                               "Frame Time:");
+            ImGui::TableNextColumn();
+            ImGui::Text("%.2f ms", ctx->time.delta * 1000.0f);
+
+            // FPS stats
+            if (scene::g_max_fps > 0.0f)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
+                                   "FPS (Min/Avg/Max):");
+                ImGui::TableNextColumn();
+                ImGui::Text("%.0f / %.0f / %.0f",
+                            scene::g_min_fps,
+                            scene::g_avg_fps,
+                            scene::g_max_fps);
+            }
+
+            // Frame count
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f), "Frame:");
+            ImGui::TableNextColumn();
+            ImGui::Text("%llu",
+                        static_cast<unsigned long long>(ctx->time.frame_count));
+
+            // Elapsed time
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f), "Elapsed:");
+            ImGui::TableNextColumn();
+            ImGui::Text("%.1f s", ctx->time.elapsed);
+
+            // Draw calls
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
+                               "Draw Calls:");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", scene::g_draw_calls);
+
+            // Triangles
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f), "Triangles:");
+            ImGui::TableNextColumn();
+            ImGui::Text("~%d", scene::g_triangles);
+
+            // Objects
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f), "Objects:");
+            ImGui::TableNextColumn();
+            ImGui::Text("%zu", scene::g_models.size());
+
+            // Resolution
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
+                               "Resolution:");
+            ImGui::TableNextColumn();
+            ImGui::Text("%d x %d",
+                        ctx->settings->get_window_width(),
+                        ctx->settings->get_window_height());
+
+            ImGui::EndTable();
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // FPS graph using ImPlot
         constexpr int size = 300;
         int           idx  = scene::g_frame_idx;
-        float         reordered_times[300];
         float         reordered_fps[300];
 
-        // Reorder circular buffers for plotting
+        // Reorder circular buffer for plotting
         for (int i = 0; i < size; ++i)
         {
             int src_idx = (idx + i) % size;
             if (src_idx >= 0 && src_idx < size)
             {
-                reordered_times[i] = scene::g_frame_times[src_idx];
-                reordered_fps[i]   = scene::g_fps_history[src_idx];
+                reordered_fps[i] = scene::g_fps_history[src_idx];
             }
             else
             {
-                reordered_times[i] = 0.0f;
-                reordered_fps[i]   = 0.0f;
+                reordered_fps[i] = 0.0f;
             }
         }
 
-        // Frame time graph with legend
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
-        ImGui::Text("Frame Time (ms)");
-        ImGui::PopStyleColor();
-        ImGui::PushStyleColor(ImGuiCol_PlotLines,
-                              ImVec4(0.38f, 0.68f, 0.93f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_FrameBg,
-                              ImVec4(0.067f, 0.067f, 0.075f, 1.0f));
-        ImGui::PlotLines("##frame_time",
-                         reordered_times,
-                         size,
-                         0,
-                         nullptr,
-                         0.0f,
-                         33.3f,
-                         ImVec2(-1, 60));
-        ImGui::PopStyleColor(2);
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.45f, 0.48f, 1.0f));
-        ImGui::Text("  0 ms                                16.67 ms (60 FPS)");
-        ImGui::PopStyleColor();
+        // ImPlot FPS graph
+        // Ensure ImPlot context exists (should be created in ui::init)
+        if (ImPlot::GetCurrentContext() == nullptr)
+        {
+            ImPlot::CreateContext();
+        }
 
+        if (ImPlot::BeginPlot("FPS History",
+                              ImVec2(-1, 150),
+                              ImPlotFlags_NoTitle | ImPlotFlags_NoMenus |
+                                  ImPlotFlags_NoBoxSelect))
+        {
+            ImPlot::SetupAxes("Time",
+                              "FPS",
+                              ImPlotAxisFlags_NoLabel |
+                                  ImPlotAxisFlags_NoTickLabels);
+            ImPlot::SetupAxisLimits(ImAxis_X1, 0, size, ImGuiCond_Always);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 120, ImGuiCond_Always);
+            ImPlot::SetupAxisFormat(ImAxis_Y1, "%.0f");
+
+            // Draw 60 FPS reference line
+            ImPlot::SetNextLineStyle(ImVec4(0.5f, 0.5f, 0.5f, 0.5f), 1.0f);
+            float ref_line[2] = { 60.0f, 60.0f };
+            ImPlot::PlotLine("60 FPS", ref_line, 2);
+
+            // Draw FPS line
+            ImPlot::SetNextLineStyle(ImVec4(0.40f, 0.80f, 0.50f, 1.0f), 2.0f);
+            ImPlot::PlotLine("FPS", reordered_fps, size);
+
+            // Draw fill under curve
+            ImPlot::SetNextFillStyle(ImVec4(0.40f, 0.80f, 0.50f, 0.2f), 0.0f);
+            ImPlot::PlotShaded("FPS", reordered_fps, size);
+
+            ImPlot::EndPlot();
+        }
+
+#ifdef TRACY_ENABLE
         ImGui::Spacing();
-
-        // FPS history graph with legend
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
-        ImGui::Text("FPS History");
-        ImGui::PopStyleColor();
-        ImGui::PushStyleColor(ImGuiCol_PlotLines,
-                              ImVec4(0.40f, 0.80f, 0.50f, 1.0f));
-        ImGui::PushStyleColor(ImGuiCol_FrameBg,
-                              ImVec4(0.067f, 0.067f, 0.075f, 1.0f));
-        ImGui::PlotLines("##fps_history",
-                         reordered_fps,
-                         size,
-                         0,
-                         nullptr,
-                         0.0f,
-                         120.0f,
-                         ImVec2(-1, 60));
-        ImGui::PopStyleColor(2);
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.45f, 0.45f, 0.48f, 1.0f));
-        ImGui::Text("  0 FPS                               60 FPS");
-        ImGui::PopStyleColor();
+        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
+                           "Tracy Profiler:");
+        ImGui::TextColored(ImVec4(0.40f, 0.70f, 0.95f, 1.0f),
+                           "Connect to localhost:8086");
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Use Tracy profiler GUI to connect and view "
+                              "detailed profiling data");
+#endif
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
@@ -1805,6 +1877,17 @@ void log_clear()
 void init()
 {
     apply_modern_theme();
+
+    // Initialize ImPlot context - it will automatically link to the current
+    // ImGui context Make sure ImGui context is set before calling this (should
+    // be done in game_init)
+    ImPlotContext* plot_ctx = ImPlot::CreateContext();
+    if (plot_ctx == nullptr)
+    {
+        spdlog::error("Failed to create ImPlot context");
+    }
+    // CreateContext automatically sets it as current, so we don't need
+    // SetCurrentContext
 }
 
 void draw(euengine::engine_context* ctx)

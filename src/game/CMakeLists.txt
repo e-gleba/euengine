@@ -17,3 +17,9 @@ target_link_libraries(
     game
     PRIVATE warnings glm EnTT::EnTT spdlog implot imgui engine_interface
 )
+
+# Link Tracy if available
+if(TARGET Tracy::TracyClient)
+    target_link_libraries(game PRIVATE Tracy::TracyClient)
+    target_compile_definitions(game PRIVATE TRACY_ENABLE)
+endif()

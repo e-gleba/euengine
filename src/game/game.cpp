@@ -5,6 +5,10 @@
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/spdlog.h>
 
+#ifdef TRACY_ENABLE
+#include <tracy/Tracy.hpp>
+#endif
+
 #include <algorithm>
 #include <mutex>
 
@@ -146,6 +150,10 @@ GAME_API euengine::preinit_result game_preinit(euengine::preinit_settings* s)
 
 GAME_API bool game_init(euengine::engine_context* ctx)
 {
+#ifdef TRACY_ENABLE
+    ZoneScopedN("game_init");
+#endif
+
     // Add console sink
     g_sink = std::make_shared<ui_sink>();
     spdlog::default_logger()->sinks().push_back(g_sink);
@@ -176,6 +184,10 @@ GAME_API void game_shutdown()
 
 GAME_API void game_update(euengine::engine_context* ctx)
 {
+#ifdef TRACY_ENABLE
+    ZoneScopedN("game_update");
+#endif
+
     scene::update(ctx);
 
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
@@ -187,11 +199,20 @@ GAME_API void game_update(euengine::engine_context* ctx)
 
 GAME_API void game_render(euengine::engine_context* ctx)
 {
+#ifdef TRACY_ENABLE
+    ZoneScopedN("game_render");
+    FrameMark;
+#endif
+
     scene::render(ctx);
 }
 
 GAME_API void game_ui(euengine::engine_context* ctx)
 {
+#ifdef TRACY_ENABLE
+    ZoneScopedN("game_ui");
+#endif
+
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
     // Update time for console logging before drawing UI
     ui::g_time = ctx->time.elapsed;
