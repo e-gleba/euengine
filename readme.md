@@ -58,3 +58,29 @@ Full GLTF/GLB import. Model in Godot, export, load directly. Engine handles rend
 cmake --preset clang
 cmake --build --preset clang
 ```
+
+## Development
+
+Install pre-commit hooks:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+Hooks run on commit:
+- **clang-format** - C++ code formatting
+- **markdownlint** - Markdown formatting
+- **gersemi** - CMake formatting
+
+Run clang-tidy manually:
+
+```bash
+clang-tidy --fix --config-file=.clang-tidy src/**/*.{cpp,hpp}
+```
+
+Format manually with:
+
+```bash
+pre-commit run --all-files
+```
