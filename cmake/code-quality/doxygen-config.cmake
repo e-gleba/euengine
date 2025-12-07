@@ -46,7 +46,7 @@ if(DOXYGEN_FOUND)
     )
 
     install(
-        DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated-docs"
+        DIRECTORY "${CMAKE_BINARY_DIR}/generated-docs"
         DESTINATION "share/doc/${PROJECT_NAME}"
         COMPONENT documentation
     )
