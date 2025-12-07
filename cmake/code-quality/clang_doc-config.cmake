@@ -6,11 +6,19 @@ find_program(
 )
 
 if(clang_doc_exe)
+    file(
+        GLOB_RECURSE clang_doc_sources
+        "${PROJECT_SOURCE_DIR}/src/*.cpp"
+        "${PROJECT_SOURCE_DIR}/src/*.cxx"
+        "${PROJECT_SOURCE_DIR}/src/*.hpp"
+        "${PROJECT_SOURCE_DIR}/src/*.hxx"
+    )
+
     add_custom_target(
         clang_doc
         COMMAND
-            "${clang_doc_exe}" "${PROJECT_SOURCE_DIR}/**/*.{cpp,cxx,hpp,hxx}"
-            --format=html --output="${CMAKE_BINARY_DIR}/clang-doc"
+            "${clang_doc_exe}" ${clang_doc_sources} --format=html
+            "--output=${CMAKE_BINARY_DIR}/clang-doc"
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         VERBATIM
         COMMENT
