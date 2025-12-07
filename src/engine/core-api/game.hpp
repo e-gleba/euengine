@@ -2,6 +2,7 @@
 
 #include "audio.hpp"
 #include "engine.hpp"
+#include "profiler.hpp"
 #include "renderer.hpp"
 #include "window.hpp"
 
@@ -78,6 +79,7 @@ struct engine_context final
     i_shader_manager*  shaders   = nullptr;
     i_audio*           audio     = nullptr;
     i_engine_settings* settings  = nullptr;
+    i_profiler*        profiler  = nullptr; ///< Optional profiler interface
     void*              imgui_ctx = nullptr;
     display_info       display   = {};
     input_state        input     = {};

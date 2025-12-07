@@ -5,6 +5,7 @@
 #include "shader.hpp"
 
 #include <core-api/camera.hpp>
+#include <core-api/profiler.hpp>
 
 #include <imgui.h>
 #include <spdlog/spdlog.h>
@@ -196,11 +197,13 @@ bool engine::init(const preinit_settings& settings)
     background_ = settings.background;
 
     // Setup engine context for game
-    context_.registry   = &registry_;
-    context_.renderer   = renderer_.get();
-    context_.shaders    = shader_manager_.get();
-    context_.audio      = audio_.get();
-    context_.settings   = this; // Engine implements i_engine_settings
+    context_.registry = &registry_;
+    context_.renderer = renderer_.get();
+    context_.shaders  = shader_manager_.get();
+    context_.audio    = audio_.get();
+    context_.settings = this; // Engine implements i_engine_settings
+    context_.profiler =
+        nullptr; // Will be set by game module if profiling is enabled
     context_.imgui_ctx  = ImGui::GetCurrentContext();
     context_.background = &background_;
 
@@ -747,6 +750,8 @@ bool engine::process_event(const SDL_Event& event)
 
 void engine::update()
 {
+    PROFILER_ZONE(context_.profiler, "engine::update");
+
     // Update camera components using ranges
     auto camera_view = registry_.view<camera_component>();
     for (auto&& [entity, cam] : camera_view.each())
@@ -797,6 +802,8 @@ void engine::update()
 
 void engine::render()
 {
+    PROFILER_ZONE(context_.profiler, "engine::render");
+
     // Apply deferred VSync change before acquiring swapchain
     if (vsync_dirty_)
     {
@@ -965,6 +972,8 @@ void engine::render()
 
 void engine::iterate()
 {
+    PROFILER_ZONE(context_.profiler, "engine::iterate");
+
     const Uint64 freq = SDL_GetPerformanceFrequency();
     const Uint64 now  = SDL_GetPerformanceCounter();
 
@@ -993,9 +1002,20 @@ void engine::iterate()
     update();
     render();
 
+    // Mark frame end for profiler
+    if (context_.profiler != nullptr)
+    {
+        context_.profiler->mark_frame();
+    }
+
     // Reset accumulated mouse motion for next frame
     input_.mouse_xrel = 0.0f;
     input_.mouse_yrel = 0.0f;
+}
+
+void engine::set_profiler(i_profiler* profiler) noexcept
+{
+    context_.profiler = profiler;
 }
 
 } // namespace euengine

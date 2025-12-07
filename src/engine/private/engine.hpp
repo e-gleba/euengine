@@ -4,6 +4,7 @@
 
 #include <core-api/engine.hpp>
 #include <core-api/platform.hpp>
+#include <core-api/profiler.hpp>
 #include <core-api/window.hpp>
 
 #include <SDL3/SDL.h>
@@ -92,6 +93,10 @@ public:
 
     /// Reload game library from same path (for hot-reload)
     [[nodiscard]] bool reload_game() noexcept override;
+
+    /// Set the profiler instance (called by game module)
+    /// The profiler is optional and can be nullptr
+    void set_profiler(i_profiler* profiler) noexcept;
 
     // Direct accessors (for engine internal use)
     [[nodiscard]] entt::registry& registry() noexcept { return registry_; }

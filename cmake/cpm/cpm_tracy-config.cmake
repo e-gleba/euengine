@@ -62,11 +62,16 @@ if(${tracy_ADDED})
     ExternalProject_Add(
         tracy_profiler
         SOURCE_DIR ${tracy_SOURCE_DIR}/profiler
+        BINARY_DIR ${CMAKE_BINARY_DIR}/external/tracy/build
+        STAMP_DIR ${CMAKE_BINARY_DIR}/external/tracy/stamp
+        TMP_DIR ${CMAKE_BINARY_DIR}/external/tracy/tmp
         CMAKE_ARGS
             -DCMAKE_BUILD_TYPE=Release
             -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/tracy_install
-        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config Release
+        BUILD_COMMAND
+            ${CMAKE_COMMAND} --build <BINARY_DIR> --config Release --parallel
         INSTALL_COMMAND ""
         BUILD_ALWAYS ON
+        USES_TERMINAL_BUILD ON
     )
 endif()

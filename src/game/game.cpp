@@ -1,15 +1,15 @@
+#include "profiler.hpp"
 #include "scene.hpp"
 #include "ui.hpp"
+
+#include <core-api/profiler.hpp>
 
 #include <imgui.h>
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/spdlog.h>
 
-#ifdef TRACY_ENABLE
-#include <tracy/Tracy.hpp>
-#endif
-
 #include <algorithm>
+#include <memory>
 #include <mutex>
 
 namespace
@@ -150,15 +150,22 @@ GAME_API euengine::preinit_result game_preinit(euengine::preinit_settings* s)
 
 GAME_API bool game_init(euengine::engine_context* ctx)
 {
-#ifdef TRACY_ENABLE
-    ZoneScopedN("game_init");
-#endif
-
     // Add console sink
     g_sink = std::make_shared<ui_sink>();
     spdlog::default_logger()->sinks().push_back(g_sink);
 
     spdlog::info("Game module loaded");
+
+    // Set up profiler in engine context (created in separate compile unit)
+    ctx->profiler = euengine::create_profiler();
+    if (ctx->profiler != nullptr)
+    {
+        ctx->profiler->set_thread_name("Main");
+        spdlog::info("Profiler enabled");
+
+        // Profile this function using the interface
+        PROFILER_ZONE(ctx->profiler, "game_init");
+    }
 
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
     ui::init();
@@ -184,9 +191,10 @@ GAME_API void game_shutdown()
 
 GAME_API void game_update(euengine::engine_context* ctx)
 {
-#ifdef TRACY_ENABLE
-    ZoneScopedN("game_update");
-#endif
+    if (ctx->profiler != nullptr)
+    {
+        PROFILER_ZONE(ctx->profiler, "game_update");
+    }
 
     scene::update(ctx);
 
@@ -199,19 +207,20 @@ GAME_API void game_update(euengine::engine_context* ctx)
 
 GAME_API void game_render(euengine::engine_context* ctx)
 {
-#ifdef TRACY_ENABLE
-    ZoneScopedN("game_render");
-    FrameMark;
-#endif
+    if (ctx->profiler != nullptr)
+    {
+        PROFILER_ZONE(ctx->profiler, "game_render");
+    }
 
     scene::render(ctx);
 }
 
 GAME_API void game_ui(euengine::engine_context* ctx)
 {
-#ifdef TRACY_ENABLE
-    ZoneScopedN("game_ui");
-#endif
+    if (ctx->profiler != nullptr)
+    {
+        PROFILER_ZONE(ctx->profiler, "game_ui");
+    }
 
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
     // Update time for console logging before drawing UI

@@ -2,11 +2,8 @@
 #include "ui.hpp"
 
 #include <core-api/camera.hpp>
+#include <core-api/profiler.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-#ifdef TRACY_ENABLE
-#include <tracy/Tracy.hpp>
-#endif
 
 #include <algorithm>
 #include <cmath>
@@ -244,9 +241,10 @@ void shutdown()
 
 void update(euengine::engine_context* ctx)
 {
-#ifdef TRACY_ENABLE
-    ZoneScopedN("scene::update");
-#endif
+    if (ctx->profiler != nullptr)
+    {
+        PROFILER_ZONE(ctx->profiler, "scene::update");
+    }
 
     // Stats
     constexpr int history_size = 300;
@@ -284,9 +282,10 @@ void update(euengine::engine_context* ctx)
 
 void render(euengine::engine_context* ctx)
 {
-#ifdef TRACY_ENABLE
-    ZoneScopedN("scene::render");
-#endif
+    if (ctx->profiler != nullptr)
+    {
+        PROFILER_ZONE(ctx->profiler, "scene::render");
+    }
     // Draw grid first
     for (auto h : g_grids)
         ctx->renderer->draw(h);

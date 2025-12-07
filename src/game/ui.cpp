@@ -3,13 +3,10 @@
 #include "scene.hpp"
 
 #include <core-api/camera.hpp>
+#include <core-api/profiler.hpp>
 #include <imgui.h>
 #include <implot.h>
 #include <spdlog/spdlog.h>
-
-#ifdef TRACY_ENABLE
-#include <tracy/Tracy.hpp>
-#endif
 
 #include <algorithm>
 #include <cstring>
@@ -1351,9 +1348,10 @@ void draw_engine(euengine::engine_context* ctx)
 
 void draw_stats(euengine::engine_context* ctx)
 {
-#ifdef TRACY_ENABLE
-    ZoneScopedN("UI::draw_stats");
-#endif
+    if (ctx->profiler != nullptr)
+    {
+        PROFILER_ZONE(ctx->profiler, "UI::draw_stats");
+    }
 
     if (!g_show_stats)
         return;
