@@ -5,7 +5,6 @@
 
 #include "gltf_loader.hpp"
 #include "model_loader.hpp"
-#include "obj_loader.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -22,7 +21,6 @@ public:
     ModelLoaderRegistry()
     {
         // Register built-in loaders
-        register_loader(std::make_unique<ObjLoader>());
         register_loader(std::make_unique<GltfLoader>());
     }
 

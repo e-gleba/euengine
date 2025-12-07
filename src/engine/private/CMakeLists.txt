@@ -29,10 +29,9 @@ target_link_libraries(
         yaml-cpp
         stb
         imgui_sdl3
-        tinyobjloader
-        tinygltf
         pybind11::embed
         model-loaders
+        fastgltf::fastgltf
         engine_interface
 )
 

@@ -11,5 +11,5 @@ set_target_properties(
 
 target_link_libraries(
     model-loaders
-    PRIVATE warnings glm spdlog tinyobjloader tinygltf
+    PRIVATE warnings glm spdlog fastgltf::fastgltf
 )
