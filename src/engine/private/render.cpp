@@ -369,8 +369,6 @@ void Renderer::ensure_msaa_targets(Uint32               width,
             sample_count = SDL_GPU_SAMPLECOUNT_4;
             break;
         case msaa_samples::x8:
-            sample_count = SDL_GPU_SAMPLECOUNT_8;
-            break;
         case msaa_samples::x16:
             sample_count = SDL_GPU_SAMPLECOUNT_8;
             break; // SDL_GPU max is 8x
