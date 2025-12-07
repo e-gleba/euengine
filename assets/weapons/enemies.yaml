@@ -1,0 +1,5 @@
+weapons:
+  wpn_e_machinegun:
+    missile: e_mgun_proj
+    flash: e_mgun_flash
+    speed: 500
