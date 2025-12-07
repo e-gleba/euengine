@@ -1167,8 +1167,7 @@ mesh_handle Renderer::create_mesh(std::span<const vertex>   verts,
     converted.reserve(verts.size());
     std::ranges::transform(verts,
                            std::back_inserter(converted),
-                           [](const vertex& v)
-                           {
+                           [](const vertex& v) {
                                return vertex_pos_color { .position = v.position,
                                                          .color    = v.color };
                            });

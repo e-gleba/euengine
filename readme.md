@@ -69,9 +69,8 @@ pre-commit install
 ```
 
 Hooks run on commit:
-- **clang-format** - C++ code formatting
-- **markdownlint** - Markdown formatting
-- **gersemi** - CMake formatting
+- **clang-format** - C++ code formatting (auto-fixes)
+- **gersemi** - CMake formatting (auto-fixes)
 
 Run clang-tidy manually:
 

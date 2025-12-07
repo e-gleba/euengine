@@ -11,13 +11,15 @@ project(
 option(USE_BASS_PROXY_LIB ON)
 
 list(
-    APPEND CMAKE_PREFIX_PATH
+    APPEND
+    CMAKE_PREFIX_PATH
     ${CMAKE_CURRENT_LIST_DIR}/cmake
     ${CMAKE_CURRENT_LIST_DIR}/cmake/code-quality
 )
 
 list(
-    APPEND CMAKE_FIND_ROOT_PATH
+    APPEND
+    CMAKE_FIND_ROOT_PATH
     ${CMAKE_CURRENT_LIST_DIR}/cmake
     ${CMAKE_CURRENT_LIST_DIR}/cmake/code-quality
 )

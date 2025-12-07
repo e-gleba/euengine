@@ -14,9 +14,10 @@ euengine::ModelLoaderRegistry::ModelLoaderRegistry()
 void euengine::ModelLoaderRegistry::register_loader(
     std::unique_ptr<IModelLoader> loader)
 {
-    if (loader) {
+    if (loader)
+    {
         loaders.push_back(std::move(loader));
-}
+    }
 }
 
 [[nodiscard]] const euengine::IModelLoader*
@@ -28,9 +29,10 @@ euengine::ModelLoaderRegistry::find_loader(
 
     for (const auto& loader : loaders)
     {
-        if (loader->supports(ext)) {
+        if (loader->supports(ext))
+        {
             return loader.get();
-}
+        }
     }
     return nullptr;
 }

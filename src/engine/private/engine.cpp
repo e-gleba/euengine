@@ -400,9 +400,10 @@ void engine::set_frames_in_flight(std::uint32_t frames) noexcept
 
 bool engine::is_msaa_supported(msaa_samples samples) const noexcept
 {
-    if (!device_) {
+    if (!device_)
+    {
         return false;
-}
+    }
 
     SDL_GPUSampleCount count = SDL_GPU_SAMPLECOUNT_1;
     switch (samples)

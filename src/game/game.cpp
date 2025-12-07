@@ -139,7 +139,7 @@ GAME_API euengine::preinit_result game_preinit(euengine::preinit_settings* s)
     s->audio.master_volume = 0.8f;
     s->audio.music_volume  = 0.5f;
 
-    s->background = { .r=0.12f, .g=0.14f, .b=0.18f, .a=1.0f };
+    s->background = { .r = 0.12f, .g = 0.14f, .b = 0.18f, .a = 1.0f };
 
     return euengine::preinit_result::ok;
 }
@@ -179,9 +179,10 @@ GAME_API void game_update(euengine::engine_context* ctx)
     scene::update(ctx);
 
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
-    if (!ImGui::GetIO().WantCaptureMouse && ImGui::GetIO().MouseClicked[0]) {
+    if (!ImGui::GetIO().WantCaptureMouse && ImGui::GetIO().MouseClicked[0])
+    {
         ctx->settings->set_mouse_captured(true);
-}
+    }
 }
 
 GAME_API void game_render(euengine::engine_context* ctx)
