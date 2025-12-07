@@ -1,7 +1,5 @@
-add_library(game SHARED)
-
-file(GLOB_RECURSE GAME_SRC CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
-target_sources(game PRIVATE ${GAME_SRC})
+file(GLOB_RECURSE game_src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+add_library(game SHARED ${game_src})
 
 target_include_directories(game PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
