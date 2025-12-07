@@ -1382,13 +1382,26 @@ void draw_stats(euengine::engine_context* ctx)
     {
         ImGui::Separator();
 
-        // Current FPS - large and prominent
-        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.40f, 0.80f, 0.50f, 1.0f));
-        ImGui::PushFont(nullptr); // Use default font but larger
-        auto fps_text = std::format("{:.0f} FPS", ctx->time.fps);
+        // Current FPS - large and prominent with color coding
+        ImVec4 fps_color;
+        if (ctx->time.fps >= 60.0f)
+            fps_color = ImVec4(0.40f, 0.80f, 0.50f, 1.0f); // Green for 60+ FPS
+        else if (ctx->time.fps >= 30.0f)
+            fps_color =
+                ImVec4(0.95f, 0.75f, 0.30f, 1.0f); // Yellow for 30-60 FPS
+        else
+            fps_color = ImVec4(0.95f, 0.40f, 0.40f, 1.0f); // Red for <30 FPS
+
+        ImGui::PushStyleColor(ImGuiCol_Text, fps_color);
+        auto fps_text = std::format("{:.1f} FPS", ctx->time.fps);
         ImGui::Text("%s", fps_text.c_str());
-        ImGui::PopFont();
         ImGui::PopStyleColor();
+
+        // Frame time next to FPS
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - 80);
+        ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
+                           "%.2f ms",
+                           ctx->time.delta * 1000.0f);
 
         ImGui::Spacing();
 
@@ -1399,14 +1412,6 @@ void draw_stats(euengine::engine_context* ctx)
                 "Label", ImGuiTableColumnFlags_WidthFixed, 120.0f);
             ImGui::TableSetupColumn("Value",
                                     ImGuiTableColumnFlags_WidthStretch);
-
-            // Frame time
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
-                               "Frame Time:");
-            ImGui::TableNextColumn();
-            ImGui::Text("%.2f ms", ctx->time.delta * 1000.0f);
 
             // FPS stats
             if (scene::g_max_fps > 0.0f)
@@ -1503,30 +1508,35 @@ void draw_stats(euengine::engine_context* ctx)
         }
 
         if (ImPlot::BeginPlot("FPS History",
-                              ImVec2(-1, 150),
+                              ImVec2(-1, 180),
                               ImPlotFlags_NoTitle | ImPlotFlags_NoMenus |
-                                  ImPlotFlags_NoBoxSelect))
+                                  ImPlotFlags_NoBoxSelect |
+                                  ImPlotFlags_NoLegend))
         {
-            ImPlot::SetupAxes("Time",
-                              "FPS",
-                              ImPlotAxisFlags_NoLabel |
-                                  ImPlotAxisFlags_NoTickLabels);
+            // Setup axes with better formatting
+            ImPlot::SetupAxes(
+                nullptr,
+                "FPS",
+                ImPlotAxisFlags_NoLabel | ImPlotAxisFlags_NoTickLabels,
+                ImPlotAxisFlags_AutoFit | ImPlotAxisFlags_RangeFit);
             ImPlot::SetupAxisLimits(ImAxis_X1, 0, size, ImGuiCond_Always);
-            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 120, ImGuiCond_Always);
+
+            // Auto-scale Y axis based on current FPS range
+            float max_fps = 60.0f;
+            if (scene::g_max_fps > 0.0f)
+            {
+                max_fps = std::max(120.0f, scene::g_max_fps * 1.2f);
+            }
+            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max_fps, ImGuiCond_Always);
             ImPlot::SetupAxisFormat(ImAxis_Y1, "%.0f");
 
-            // Draw 60 FPS reference line
-            ImPlot::SetNextLineStyle(ImVec4(0.5f, 0.5f, 0.5f, 0.5f), 1.0f);
-            float ref_line[2] = { 60.0f, 60.0f };
-            ImPlot::PlotLine("60 FPS", ref_line, 2);
-
-            // Draw FPS line
+            // Draw FPS line with smooth rendering
             ImPlot::SetNextLineStyle(ImVec4(0.40f, 0.80f, 0.50f, 1.0f), 2.0f);
             ImPlot::PlotLine("FPS", reordered_fps, size);
 
-            // Draw fill under curve
-            ImPlot::SetNextFillStyle(ImVec4(0.40f, 0.80f, 0.50f, 0.2f), 0.0f);
-            ImPlot::PlotShaded("FPS", reordered_fps, size);
+            // Draw fill under curve with gradient
+            ImPlot::SetNextFillStyle(ImVec4(0.40f, 0.80f, 0.50f, 0.15f), 0.0f);
+            ImPlot::PlotShaded("##fps_fill", reordered_fps, size);
 
             ImPlot::EndPlot();
         }

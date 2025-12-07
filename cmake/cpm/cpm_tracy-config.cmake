@@ -58,19 +58,15 @@ cpmaddpackage(
         # "TRACY_ROCPROF_CALIBRATION OFF"      # continuous gpu time calibration (rocm only)
 )
 
-# usage:
-# target_link_libraries(your_target PRIVATE Tracy::TracyClient)
-#
-# wrap zones like:
-#   ZoneScoped;  // or ZoneScopedN("custom_name")
-#   // your code
-#
-# memory tracking:
-#   TracyAlloc(ptr, size);
-#   TracyFree(ptr);
-#
-# gpu (vulkan example):
-#   TracyVkContext(ctx, device, queue, cmdbuf);
-#   TracyVkZone(ctx, cmdbuf, "gpu_work");
-#
-# connect profiler gui to see flamegraphs. server: https://github.com/wolfpld/tracy/releases
+if(${tracy_ADDED})
+    ExternalProject_Add(
+        tracy_profiler
+        SOURCE_DIR ${tracy_SOURCE_DIR}/profiler
+        CMAKE_ARGS
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/tracy_install
+        BUILD_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config Release
+        INSTALL_COMMAND ""
+        BUILD_ALWAYS ON
+    )
+endif()
