@@ -207,6 +207,11 @@ void Renderer::shutdown()
         SDL_ReleaseGPUGraphicsPipeline(device_, wireframe_tri_pipeline_);
         wireframe_tri_pipeline_ = nullptr;
     }
+    if (wireframe_bounds_pipeline_ != nullptr)
+    {
+        SDL_ReleaseGPUGraphicsPipeline(device_, wireframe_bounds_pipeline_);
+        wireframe_bounds_pipeline_ = nullptr;
+    }
     if (textured_pipeline_ != nullptr)
     {
         SDL_ReleaseGPUGraphicsPipeline(device_, textured_pipeline_);
@@ -560,7 +565,27 @@ bool Renderer::create_wireframe_pipeline()
     }
     wireframe_tri_pipeline_ =
         SDL_CreateGPUGraphicsPipeline(device_, &pipeline_info);
-    return wireframe_tri_pipeline_ != nullptr;
+    if (wireframe_tri_pipeline_ == nullptr)
+    {
+        return false;
+    }
+
+    // Create bounds wireframe pipeline - disable depth test entirely
+    // This ensures bounding boxes are always visible, even when camera is inside the object
+    // This is how most game engines handle selection gizmos/bounding boxes
+    pipeline_info.primitive_type = SDL_GPU_PRIMITIVETYPE_LINELIST;
+    depth_state.compare_op         = SDL_GPU_COMPAREOP_ALWAYS;
+    depth_state.enable_depth_test  = false; // Disable depth test - always render on top
+    depth_state.enable_depth_write = false; // Don't write to depth buffer
+    pipeline_info.depth_stencil_state = depth_state;
+
+    if (wireframe_bounds_pipeline_ != nullptr)
+    {
+        SDL_ReleaseGPUGraphicsPipeline(device_, wireframe_bounds_pipeline_);
+    }
+    wireframe_bounds_pipeline_ =
+        SDL_CreateGPUGraphicsPipeline(device_, &pipeline_info);
+    return wireframe_bounds_pipeline_ != nullptr;
 }
 
 bool Renderer::create_textured_pipeline()
@@ -1323,8 +1348,9 @@ gpu_model Renderer::upload_loaded_model(const loaded_model& data,
 
         if (!verts.empty() && !src_mesh.indices.empty())
         {
-            model.meshes.push_back(
-                upload_textured_mesh(verts, src_mesh.indices));
+            auto gpu_mesh = upload_textured_mesh(verts, src_mesh.indices);
+            // Texture will be set later in load_model based on material
+            model.meshes.push_back(std::move(gpu_mesh));
         }
     }
 
@@ -1344,23 +1370,108 @@ model_handle Renderer::load_model(const std::filesystem::path& path,
 
     auto& data = result.value();
 
-    // Load texture - first from model data, then try to find by name
-    texture_handle tex = invalid_texture;
-    if (!data.texture_path.empty())
+    // Load all textures from the model
+    std::vector<texture_handle> loaded_textures;
+    loaded_textures.reserve(data.textures.size());
+    
+    for (const auto& model_tex : data.textures)
     {
-        tex = load_texture(data.texture_path);
-    }
-    if (tex == invalid_texture)
-    {
-        if (auto tex_path = find_texture_for_model(path); !tex_path.empty())
+        texture_handle tex = invalid_texture;
+        
+        if (!model_tex.path.empty())
         {
-            tex = load_texture(tex_path);
+            // Load from file
+            tex = load_texture(model_tex.path);
+        }
+        else if (!model_tex.embedded_data.empty())
+        {
+            // Load from embedded data
+            auto tex_result = euengine::load_texture_from_memory(
+                device_,
+                model_tex.embedded_data.data(),
+                model_tex.embedded_data.size(),
+                true);
+            
+            if (tex_result)
+            {
+                const auto h = next_texture_handle_++;
+                textures_[h] = { .texture = tex_result->texture,
+                                 .sampler = tex_result->sampler,
+                                 .width   = tex_result->width,
+                                 .height  = tex_result->height };
+                tex = h;
+                spdlog::info("=> embedded texture: {}x{} ({})",
+                             tex_result->width,
+                             tex_result->height,
+                             model_tex.mime_type.empty() ? "unknown" : model_tex.mime_type);
+            }
+        }
+        
+        loaded_textures.push_back(tex);
+    }
+
+    // Fallback: try to find texture by name if no textures were loaded
+    texture_handle primary_tex = invalid_texture;
+    if (loaded_textures.empty() || 
+        (loaded_textures.size() == 1 && loaded_textures[0] == invalid_texture))
+    {
+        if (!data.texture_path.empty())
+        {
+            primary_tex = load_texture(data.texture_path);
+        }
+        if (primary_tex == invalid_texture)
+        {
+            if (auto tex_path = find_texture_for_model(path); !tex_path.empty())
+            {
+                primary_tex = load_texture(tex_path);
+            }
+        }
+    }
+    else
+    {
+        // Use first valid texture as primary
+        for (auto tex : loaded_textures)
+        {
+            if (tex != invalid_texture)
+            {
+                primary_tex = tex;
+                break;
+            }
         }
     }
 
     // Upload to GPU
     gpu_model model = upload_loaded_model(data, color);
-    model.texture   = tex;
+    model.texture   = primary_tex; // Legacy: keep for backward compatibility
+    model.textures  = loaded_textures; // Store all textures
+
+    // Assign textures to meshes based on materials
+    for (std::size_t i = 0; i < model.meshes.size() && i < data.meshes.size(); ++i)
+    {
+        const auto& src_mesh = data.meshes[i];
+        auto& gpu_mesh = model.meshes[i];
+        
+        // Get texture from material
+        texture_handle mesh_tex = invalid_texture;
+        if (src_mesh.material_index < data.materials.size())
+        {
+            const auto& material = data.materials[src_mesh.material_index];
+            
+            // Try base color texture first
+            if (material.base_color_texture_index < loaded_textures.size())
+            {
+                mesh_tex = loaded_textures[material.base_color_texture_index];
+            }
+        }
+        
+        // Fallback to primary texture or default
+        if (mesh_tex == invalid_texture)
+        {
+            mesh_tex = (primary_tex != invalid_texture) ? primary_tex : default_texture_;
+        }
+        
+        gpu_mesh.texture = mesh_tex;
+    }
 
     if (model.meshes.empty())
     {
@@ -1399,7 +1510,19 @@ void Renderer::unload_model(model_handle h)
                 SDL_ReleaseGPUBuffer(device_, m.index_buffer);
             }
         }
-        if (it->second.texture != invalid_texture)
+        // Unload all textures used by this model
+        for (auto tex : it->second.textures)
+        {
+            if (tex != invalid_texture && tex != default_texture_)
+            {
+                unload_texture(tex);
+            }
+        }
+        // Also unload legacy primary texture if different
+        if (it->second.texture != invalid_texture && 
+            it->second.texture != default_texture_ &&
+            std::find(it->second.textures.begin(), it->second.textures.end(), 
+                     it->second.texture) == it->second.textures.end())
         {
             unload_texture(it->second.texture);
         }
@@ -1457,14 +1580,12 @@ void Renderer::draw_model(model_handle h, const transform& xform)
     const auto& model = it->second;
 
     // Build model matrix: translate -> rotate (YXZ order) -> scale
-    // Note: Add 180 degree rotation to fix model front/back orientation
-    constexpr float k_model_rotation_fix = 180.0f;
-
+    // Note: Removed hardcoded 180-degree rotation fix - glTF scenes should be correctly oriented
     auto model_mat = glm::mat4(1.0f);
     model_mat      = glm::translate(model_mat, xform.position);
     model_mat =
         glm::rotate(model_mat,
-                    glm::radians(xform.rotation.y + k_model_rotation_fix),
+                    glm::radians(xform.rotation.y),
                     glm::vec3(0, 1, 0));
     model_mat = glm::rotate(
         model_mat, glm::radians(xform.rotation.x), glm::vec3(1, 0, 0));
@@ -1484,10 +1605,12 @@ void Renderer::draw_model(model_handle h, const transform& xform)
     const uniform_mvp uniforms { view_proj_ * model_mat };
     SDL_PushGPUVertexUniformData(current_cmd_, 0, &uniforms, sizeof(uniforms));
 
-    const auto tex =
-        model.texture != invalid_texture ? model.texture : default_texture_;
+    // Draw each mesh with its own texture
     for (const auto& mesh : model.meshes)
     {
+        const auto tex = (mesh.texture != invalid_texture) 
+            ? mesh.texture 
+            : ((model.texture != invalid_texture) ? model.texture : default_texture_);
         draw_textured_mesh_internal(mesh, tex);
     }
 }
@@ -1511,11 +1634,22 @@ void Renderer::draw_bounds(const bounds&    b,
     }
 
     // Build corners of the AABB in local space
+    // Slightly expand the bounds to ensure wireframe is visible outside the model
+    const float expand = 0.01f; // Small expansion factor (1% larger)
+    const glm::vec3 center = (b.min + b.max) * 0.5f;
+    const glm::vec3 extents = (b.max - b.min) * 0.5f * (1.0f + expand);
+    const glm::vec3 expanded_min = center - extents;
+    const glm::vec3 expanded_max = center + extents;
+    
     const glm::vec3 corners[8] = {
-        { b.min.x, b.min.y, b.min.z }, { b.max.x, b.min.y, b.min.z },
-        { b.max.x, b.max.y, b.min.z }, { b.min.x, b.max.y, b.min.z },
-        { b.min.x, b.min.y, b.max.z }, { b.max.x, b.min.y, b.max.z },
-        { b.max.x, b.max.y, b.max.z }, { b.min.x, b.max.y, b.max.z },
+        { expanded_min.x, expanded_min.y, expanded_min.z }, 
+        { expanded_max.x, expanded_min.y, expanded_min.z },
+        { expanded_max.x, expanded_max.y, expanded_min.z }, 
+        { expanded_min.x, expanded_max.y, expanded_min.z },
+        { expanded_min.x, expanded_min.y, expanded_max.z }, 
+        { expanded_max.x, expanded_min.y, expanded_max.z },
+        { expanded_max.x, expanded_max.y, expanded_max.z }, 
+        { expanded_min.x, expanded_max.y, expanded_max.z },
     };
 
     // Build model matrix
@@ -1529,13 +1663,12 @@ void Renderer::draw_bounds(const bounds&    b,
         model_mat, glm::radians(xform.rotation.z), glm::vec3(0, 0, 1));
     model_mat = glm::scale(model_mat, xform.scale);
 
-    // Transform corners to world space
+    // Keep corners in local space - will be transformed by MVP matrix in shader
     std::vector<vertex_pos_color> verts;
     verts.reserve(8);
     for (const auto& c : corners)
     {
-        const glm::vec4 world = model_mat * glm::vec4(c, 1.0f);
-        verts.push_back({ glm::vec3(world), color });
+        verts.push_back({ c, color });
     }
 
     // Edges of the box
@@ -1549,16 +1682,41 @@ void Renderer::draw_bounds(const bounds&    b,
     auto mesh =
         upload_wireframe_mesh(verts, std::span<const uint16_t>(edges, 24));
 
-    // Bind wireframe pipeline and draw
-    if (wireframe_pipeline_ != nullptr)
+    // Bind bounds wireframe pipeline (depth test disabled)
+    // This ensures the wireframe is always visible, even when camera is inside the object
+    if (wireframe_bounds_pipeline_ != nullptr)
     {
+        SDL_BindGPUGraphicsPipeline(current_pass_, wireframe_bounds_pipeline_);
+    }
+    else if (wireframe_pipeline_ != nullptr)
+    {
+        // Fallback to regular wireframe pipeline if bounds pipeline not available
         SDL_BindGPUGraphicsPipeline(current_pass_, wireframe_pipeline_);
     }
 
-    const uniform_mvp uniforms { view_proj_ };
+    // Use MVP matrix with model transform (vertices are in local space, need model transform)
+    const uniform_mvp uniforms { view_proj_ * model_mat };
     SDL_PushGPUVertexUniformData(current_cmd_, 0, &uniforms, sizeof(uniforms));
 
-    draw_mesh_internal(mesh);
+    // Draw the mesh directly (don't use draw_mesh_internal as it would overwrite our MVP)
+    if ((current_pass_ == nullptr) || (current_cmd_ == nullptr))
+    {
+        return;
+    }
+
+    SDL_GPUBufferBinding vb {};
+    vb.buffer = mesh.vertex_buffer;
+    vb.offset = 0;
+    SDL_BindGPUVertexBuffers(current_pass_, 0, &vb, 1);
+
+    SDL_GPUBufferBinding ib {};
+    ib.buffer = mesh.index_buffer;
+    ib.offset = 0;
+    SDL_BindGPUIndexBuffer(current_pass_, &ib, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+    SDL_DrawGPUIndexedPrimitives(current_pass_, mesh.index_count, 1, 0, 0, 0);
+
+    ++frame_stats_.draw_calls;
+    frame_stats_.vertices += mesh.vertex_count;
 
     // Store in temporary list - will be cleaned up at start of next frame
     temp_meshes_.push_back(mesh);

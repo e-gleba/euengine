@@ -46,16 +46,18 @@ struct gpu_textured_mesh final
     SDL_GPUBuffer* index_buffer  = nullptr;
     Uint32         index_count   = 0;
     Uint32         vertex_count  = 0;
+    texture_handle texture       = invalid_texture; // Per-mesh texture
 };
 
-/// Complete GPU model with meshes, texture, and bounds
+/// Complete GPU model with meshes, textures, and bounds
 struct gpu_model final
 {
     std::vector<gpu_textured_mesh> meshes;
-    texture_handle                 texture      = invalid_texture;
-    glm::vec3                      color        = glm::vec3(1.0f);
+    std::vector<texture_handle>    textures;  // All textures used by this model
+    texture_handle                 texture    = invalid_texture; // Legacy: primary texture
+    glm::vec3                      color      = glm::vec3(1.0f);
     bounds                         model_bounds = {};
-    bool                           has_uvs      = false;
+    bool                           has_uvs    = false;
 };
 
 /// Vertex with position and color (wireframe)
@@ -264,6 +266,8 @@ private:
     SDL_GPUGraphicsPipeline* wireframe_pipeline_ = nullptr;
     SDL_GPUGraphicsPipeline* wireframe_tri_pipeline_ =
         nullptr; // For triangle wireframe meshes
+    SDL_GPUGraphicsPipeline* wireframe_bounds_pipeline_ =
+        nullptr; // For bounding box wireframe (always visible)
     SDL_GPUGraphicsPipeline* textured_pipeline_           = nullptr;
     SDL_GPUGraphicsPipeline* textured_wireframe_pipeline_ = nullptr;
     SDL_GPUGraphicsPipeline* postprocess_pipeline_        = nullptr;

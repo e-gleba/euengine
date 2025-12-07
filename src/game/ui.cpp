@@ -97,23 +97,27 @@ std::string sanitize_utf8(const std::string& str)
 
 // Modern Steam 2024+ inspired theme - clean, flat, professional
 // Load a glTF/GLB scene file
-void load_gltf_scene(const std::filesystem::path& path)
+void load_gltf_glb_scene(const std::filesystem::path& path)
 {
     std::string filename = sanitize_utf8(path.filename().string());
-    log(2, "Loading glTF: " + filename);
+    auto ext = path.extension().string();
+    std::ranges::transform(ext, ext.begin(), ::tolower);
+    std::string file_type = (ext == ".glb") ? "GLB" : "glTF";
+    
+    log(2, "Loading " + file_type + " scene: " + filename);
 
     // Load model at origin with default scale
     // Engine's glTF loader handles hierarchy and transforms internally
     if (auto* m = scene::add_model(path.string(), { 0.0f, 0.0f, 0.0f }, 1.0f))
     {
         m->name = path.stem().string();
-        log(2, "Loaded: " + filename);
+        log(2, "Successfully loaded " + file_type + " scene: " + filename);
         g_show_file_dialog = false;
         g_file_dialog_selected_file.clear();
     }
     else
     {
-        log(4, "Failed to load: " + filename);
+        log(4, "Failed to load " + file_type + " scene: " + filename);
     }
 }
 
@@ -244,12 +248,16 @@ void draw_menu(euengine::engine_context* ctx)
                     ctx->shaders->enable_hot_reload(true);
                 }
             }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Reload shaders and game module");
             ImGui::Separator();
-            if (ImGui::MenuItem("Load Godot Scene..."))
+            if (ImGui::MenuItem("Load Scene...", "Ctrl+O"))
             {
                 g_show_file_dialog = true;
             }
-            if (ImGui::MenuItem("Clear Scene"))
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Load a glTF/GLB scene file");
+            if (ImGui::MenuItem("Clear Scene", "Ctrl+N"))
             {
                 // Remove all models except keep camera
                 while (!scene::g_models.empty())
@@ -258,6 +266,8 @@ void draw_menu(euengine::engine_context* ctx)
                 }
                 log(2, "Scene cleared");
             }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Remove all objects from the scene");
             ImGui::Separator();
             if (ImGui::MenuItem("Rescan Assets"))
             {
@@ -265,6 +275,8 @@ void draw_menu(euengine::engine_context* ctx)
                 scene::scan_audio();
                 scene::scan_scenes();
             }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Refresh asset lists from disk");
             ImGui::Separator();
             if (ImGui::MenuItem("Exit", "Alt+F4"))
                 ctx->settings->request_quit();
@@ -281,6 +293,13 @@ void draw_menu(euengine::engine_context* ctx)
             ImGui::MenuItem("Engine Settings", nullptr, &g_show_engine);
             ImGui::MenuItem("Performance", nullptr, &g_show_stats);
             ImGui::MenuItem("Console", "`", &g_show_console);
+            ImGui::Separator();
+            if (ImGui::MenuItem("Keyboard Shortcuts...", "F1"))
+            {
+                g_show_shortcuts = true;
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("View all available keyboard shortcuts");
             ImGui::Separator();
             if (ImGui::MenuItem("Reset Window Layout"))
             {
@@ -308,13 +327,19 @@ void draw_menu(euengine::engine_context* ctx)
                 }
                 log(2, "Window layout will reset on next frame");
             }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Reset all window positions and sizes to defaults");
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Render"))
         {
             ImGui::MenuItem("Wireframe Mode", "Tab", &g_wireframe);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Toggle wireframe rendering mode");
             ImGui::MenuItem("Auto Animate", "Space", &g_auto_rotate);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Toggle automatic object animation");
             ImGui::Separator();
             if (ImGui::ColorEdit3("Background",
                                   g_sky_color,
@@ -323,6 +348,19 @@ void draw_menu(euengine::engine_context* ctx)
                 scene::apply_sky();
             ImGui::SameLine();
             ImGui::Text("Background Color");
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Change the scene background color");
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Help"))
+        {
+            if (ImGui::MenuItem("Keyboard Shortcuts", "F1"))
+            {
+                g_show_shortcuts = true;
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("View all keyboard shortcuts");
             ImGui::EndMenu();
         }
 
@@ -374,13 +412,20 @@ void draw_scene(euengine::engine_context* ctx)
                 ImGui::Text("Position");
                 ImGui::PopStyleColor();
                 ImGui::DragFloat3("##pos", &cam.position.x, 0.2f);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Camera position in world space\nDrag to adjust or use WASD to move");
 
+                ImGui::Spacing();
                 ImGui::PushStyleColor(ImGuiCol_Text,
                                       ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
                 ImGui::Text("Settings");
                 ImGui::PopStyleColor();
                 ImGui::SliderFloat("Speed", &cam.move_speed, 1.0f, 50.0f);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Camera movement speed\nHold Shift to move faster");
                 ImGui::SliderFloat("FOV", &cam.fov, 30.0f, 120.0f);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Field of view angle in degrees");
 
                 ImGui::Spacing();
                 if (ImGui::Button("Reset Camera", ImVec2(-1, 28)))
@@ -389,6 +434,8 @@ void draw_scene(euengine::engine_context* ctx)
                     cam.pitch    = -15.0f;
                     cam.yaw      = 0.0f;
                 }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Reset camera to default position and rotation");
             }
         }
 
@@ -403,35 +450,73 @@ void draw_scene(euengine::engine_context* ctx)
 
             if (ImGui::ColorEdit3("Sky", g_sky_color))
                 scene::apply_sky();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Background sky color");
             if (ImGui::ColorEdit3("Grid", g_grid_color))
                 scene::rebuild_grid();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Grid line color");
 
+            ImGui::Spacing();
             ImGui::Checkbox("Origin Axis", &scene::g_show_origin);
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Show X/Y/Z axis lines at world origin");
         }
 
         // Objects list
         if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            // Header with count and quick actions
+            ImGui::BeginGroup();
             ImGui::PushStyleColor(ImGuiCol_Text,
                                   ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
             ImGui::Text(
                 "%s", std::format("{} items", scene::g_models.size()).c_str());
             ImGui::PopStyleColor();
+            ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
+            if (ImGui::SmallButton("+ Add"))
+            {
+                g_show_browser = true;
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Open Asset Browser to add objects");
+            ImGui::EndGroup();
 
-            // Filter/search for objects
+            ImGui::Spacing();
+
+            // Enhanced search with clear button
             static char obj_filter[128] = {};
-            ImGui::SetNextItemWidth(-1);
+            ImGui::BeginGroup();
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30);
             ImGui::InputTextWithHint("##obj_filter",
                                      "Search objects...",
                                      obj_filter,
                                      sizeof(obj_filter));
-
-            // Clear selection button
-            if (scene::g_selected >= 0)
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Filter objects by name");
+            if (obj_filter[0] != '\0')
             {
                 ImGui::SameLine();
-                if (ImGui::SmallButton("Clear"))
+                if (ImGui::SmallButton("X"))
+                {
+                    obj_filter[0] = '\0';
+                }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Clear search filter");
+            }
+            ImGui::EndGroup();
+
+            // Clear selection button
+            if (scene::g_selected >= 0 || !scene::g_selected_set.empty())
+            {
+                ImGui::Spacing();
+                if (ImGui::SmallButton("Clear Selection"))
+                {
                     scene::g_selected = -1;
+                    scene::g_selected_set.clear();
+                }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Deselect all objects\nCtrl+Click to multi-select");
             }
 
             ImGui::Spacing();
@@ -446,25 +531,30 @@ void draw_scene(euengine::engine_context* ctx)
                     m.name.find(obj_filter) == std::string::npos)
                     continue;
 
-                bool sel = (static_cast<int>(i) == scene::g_selected);
+                bool sel = (static_cast<int>(i) == scene::g_selected) ||
+                           (scene::g_selected_set.find(static_cast<int>(i)) != scene::g_selected_set.end());
 
-                // Type indicators with icons
+                // Enhanced visual indicators
                 ImVec4      col  = ImVec4(0.55f, 0.55f, 0.58f, 1.0f);
                 const char* icon = "";
+                const char* status = "";
                 if (m.moving)
                 {
                     col  = ImVec4(0.40f, 0.80f, 0.50f, 1.0f);
-                    icon = "> ";
+                    icon = "[MOV] ";
+                    status = "Moving";
                 }
                 else if (m.hover)
                 {
                     col  = ImVec4(0.40f, 0.80f, 0.95f, 1.0f);
-                    icon = "^ ";
+                    icon = "[HOV] ";
+                    status = "Hovering";
                 }
                 else if (m.animate)
                 {
                     col  = ImVec4(0.95f, 0.75f, 0.30f, 1.0f);
-                    icon = "~ ";
+                    icon = "[ROT] ";
+                    status = "Rotating";
                 }
 
                 if (sel)
@@ -482,19 +572,63 @@ void draw_scene(euengine::engine_context* ctx)
 
                 auto safe_name = sanitize_utf8(m.name);
                 auto label     = std::format("{}{}", icon, safe_name);
-                if (ImGui::Selectable(label.c_str(), sel))
-                    scene::g_selected = static_cast<int>(i);
+                
+                // Multi-select support with Ctrl+Click
+                bool ctrl_held = ImGui::GetIO().KeyCtrl;
+                if (ImGui::Selectable(label.c_str(), sel, 
+                    ImGuiSelectableFlags_AllowOverlap | 
+                    (ctrl_held ? ImGuiSelectableFlags_DontClosePopups : 0)))
+                {
+                    int idx = static_cast<int>(i);
+                    if (ctrl_held)
+                    {
+                        // Toggle selection in multi-select set
+                        if (scene::g_selected_set.find(idx) != scene::g_selected_set.end())
+                        {
+                            scene::g_selected_set.erase(idx);
+                            // If this was the primary selection, clear it
+                            if (scene::g_selected == idx)
+                            {
+                                scene::g_selected = scene::g_selected_set.empty() 
+                                    ? -1 
+                                    : *scene::g_selected_set.begin();
+                            }
+                        }
+                        else
+                        {
+                            scene::g_selected_set.insert(idx);
+                            scene::g_selected = idx; // Set as primary selection
+                        }
+                    }
+                    else
+                    {
+                        // Single select - clear multi-select and set new primary
+                        scene::g_selected_set.clear();
+                        scene::g_selected_set.insert(idx);
+                        scene::g_selected = idx;
+                    }
+                }
 
                 ImGui::PopStyleColor(2);
 
-                // Tooltip with position info
+                // Enhanced tooltip with more info
                 if (ImGui::IsItemHovered())
                 {
                     ImGui::BeginTooltip();
-                    ImGui::Text("Position: %.1f, %.1f, %.1f",
+                    ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "%s", safe_name.c_str());
+                    ImGui::Separator();
+                    ImGui::Text("Position: %.2f, %.2f, %.2f",
                                 m.transform.position.x,
                                 m.transform.position.y,
                                 m.transform.position.z);
+                    ImGui::Text("Scale: %.2f", m.transform.scale.x);
+                    if (status[0] != '\0')
+                    {
+                        ImGui::TextColored(col, "Status: %s", status);
+                    }
+                    ImGui::Separator();
+                    ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f), 
+                                       "Double-click to focus camera\nCtrl+Click to multi-select");
                     ImGui::EndTooltip();
                 }
 
@@ -507,6 +641,7 @@ void draw_scene(euengine::engine_context* ctx)
                     cam.position = m.transform.position + glm::vec3(0, 2, 5);
                     cam.pitch    = -15.0f;
                     cam.yaw      = -90.0f;
+                    log(2, "Camera focused on: " + safe_name);
                 }
             }
             ImGui::EndChild();
@@ -541,88 +676,124 @@ void draw_inspector()
             auto& m =
                 scene::g_models[static_cast<std::size_t>(scene::g_selected)];
 
-            // Header
+            // Enhanced header
             auto safe_name = sanitize_utf8(m.name);
             auto safe_path = sanitize_utf8(
                 std::filesystem::path(m.path).filename().string());
-            ImGui::TextColored(
-                ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "%s", safe_name.c_str());
-            ImGui::TextColored(
-                ImVec4(0.55f, 0.55f, 0.58f, 1.0f), "%s", safe_path.c_str());
-            ImGui::Separator();
-
-            // Transform
+            ImGui::PushStyleColor(ImGuiCol_Text,
+                                  ImVec4(0.38f, 0.68f, 0.93f, 1.0f));
+            ImGui::Text("%s", safe_name.c_str());
+            ImGui::PopStyleColor();
             ImGui::PushStyleColor(ImGuiCol_Text,
                                   ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
-            ImGui::Text("Transform");
+            ImGui::Text("  %s", safe_path.c_str());
             ImGui::PopStyleColor();
-
-            if (ImGui::DragFloat3("Position", &m.transform.position.x, 0.05f))
-            {
-                // Apply grid snapping if enabled
-                if (g_grid_snap && g_snap_size > 0.0f)
-                {
-                    m.transform.position.x =
-                        std::round(m.transform.position.x / g_snap_size) *
-                        g_snap_size;
-                    m.transform.position.y =
-                        std::round(m.transform.position.y / g_snap_size) *
-                        g_snap_size;
-                    m.transform.position.z =
-                        std::round(m.transform.position.z / g_snap_size) *
-                        g_snap_size;
-                }
-            }
-            ImGui::DragFloat3("Rotation", &m.transform.rotation.x, 0.5f);
-
-            float sc = m.transform.scale.x;
-            if (ImGui::SliderFloat("Scale", &sc, 0.01f, 0.5f))
-                m.transform.scale = glm::vec3(sc);
-
             ImGui::Separator();
+
+            // Transform section
+            if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                if (ImGui::DragFloat3("Position", &m.transform.position.x, 0.05f))
+                {
+                    // Apply grid snapping if enabled
+                    if (g_grid_snap && g_snap_size > 0.0f)
+                    {
+                        m.transform.position.x =
+                            std::round(m.transform.position.x / g_snap_size) *
+                            g_snap_size;
+                        m.transform.position.y =
+                            std::round(m.transform.position.y / g_snap_size) *
+                            g_snap_size;
+                        m.transform.position.z =
+                            std::round(m.transform.position.z / g_snap_size) *
+                            g_snap_size;
+                    }
+                }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Object position in world space\nHold Ctrl for finer control");
+                
+                if (ImGui::DragFloat3("Rotation", &m.transform.rotation.x, 0.5f))
+                {
+                    // Normalize rotation to 0-360 range
+                    m.transform.rotation.x = std::fmod(m.transform.rotation.x + 360.0f, 360.0f);
+                    m.transform.rotation.y = std::fmod(m.transform.rotation.y + 360.0f, 360.0f);
+                    m.transform.rotation.z = std::fmod(m.transform.rotation.z + 360.0f, 360.0f);
+                }
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Rotation in degrees (X, Y, Z)");
+
+                float sc = m.transform.scale.x;
+                if (ImGui::SliderFloat("Scale", &sc, 0.01f, 10.0f))
+                    m.transform.scale = glm::vec3(sc);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Uniform scale factor (0.01 - 10.0)");
+            }
 
             // Color tint (especially for duck)
             if (m.name.find("duck") != std::string::npos || m.name == "duck")
             {
-                ImGui::PushStyleColor(ImGuiCol_Text,
-                                      ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
-                ImGui::Text("Color Tint");
-                ImGui::PopStyleColor();
-
-                float color[3] = { m.color_tint.r,
-                                   m.color_tint.g,
-                                   m.color_tint.b };
-                if (ImGui::ColorEdit3("##tint", color))
+                if (ImGui::CollapsingHeader("Material"))
                 {
-                    m.color_tint = glm::vec3(color[0], color[1], color[2]);
+                    ImGui::PushStyleColor(ImGuiCol_Text,
+                                          ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
+                    ImGui::Text("Color Tint");
+                    ImGui::PopStyleColor();
+
+                    float color[3] = { m.color_tint.r,
+                                       m.color_tint.g,
+                                       m.color_tint.b };
+                    if (ImGui::ColorEdit3("##tint", color))
+                    {
+                        m.color_tint = glm::vec3(color[0], color[1], color[2]);
+                    }
+                    if (ImGui::IsItemHovered())
+                        ImGui::SetTooltip("Color tint applied to the model");
                 }
-
-                ImGui::Separator();
             }
 
-            // Animation
-            ImGui::PushStyleColor(ImGuiCol_Text,
-                                  ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
-            ImGui::Text("Animation");
-            ImGui::PopStyleColor();
-
-            ImGui::Checkbox("Rotate", &m.animate);
-            if (m.animate)
+            // Animation section
+            if (ImGui::CollapsingHeader("Animation"))
             {
-                ImGui::SameLine();
-                ImGui::SetNextItemWidth(100);
-                ImGui::SliderFloat(
-                    "##speed", &m.anim_speed, 0.0f, 100.0f, "%.0f deg/s");
+                ImGui::Checkbox("Rotate", &m.animate);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Enable continuous rotation animation");
+                if (m.animate)
+                {
+                    ImGui::SameLine();
+                    ImGui::SetNextItemWidth(100);
+                    ImGui::SliderFloat(
+                        "##speed", &m.anim_speed, 0.0f, 100.0f, "%.0f deg/s");
+                    if (ImGui::IsItemHovered())
+                        ImGui::SetTooltip("Rotation speed in degrees per second");
+                }
+                ImGui::Checkbox("Hover", &m.hover);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip("Enable vertical hovering animation");
             }
-            ImGui::Checkbox("Hover", &m.hover);
 
             ImGui::Separator();
 
-            // Actions
+            // Actions section
             ImGui::PushStyleColor(ImGuiCol_Text,
                                   ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
             ImGui::Text("Actions");
             ImGui::PopStyleColor();
+
+            // Teleport to Camera button
+            ImGui::PushStyleColor(ImGuiCol_Button,
+                                  ImVec4(0.40f, 0.70f, 0.40f, 1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                                  ImVec4(0.50f, 0.80f, 0.50f, 1.0f));
+            if (ImGui::Button("Teleport to Camera", ImVec2(-1, 28)))
+            {
+                scene::teleport_object_to_camera(scene::g_selected);
+                log(2, "Teleported object to camera: " + safe_name);
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Move this object to the camera position");
+            ImGui::PopStyleColor(2);
+
+            ImGui::Spacing();
 
             // Duplicate button
             ImGui::PushStyleColor(ImGuiCol_Button,
@@ -630,7 +801,12 @@ void draw_inspector()
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
                                   ImVec4(0.35f, 0.65f, 0.90f, 1.0f));
             if (ImGui::Button("Duplicate", ImVec2(-1, 28)))
+            {
                 scene::duplicate_model(scene::g_selected);
+                log(2, "Duplicated object: " + safe_name);
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Create a copy of this object");
             ImGui::PopStyleColor(2);
 
             ImGui::Spacing();
@@ -640,13 +816,22 @@ void draw_inspector()
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
                                   ImVec4(0.85f, 0.35f, 0.35f, 1.0f));
             if (ImGui::Button("Delete Object", ImVec2(-1, 32)))
+            {
                 scene::remove_model(scene::g_selected);
+                log(2, "Deleted object: " + safe_name);
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Remove this object from the scene");
             ImGui::PopStyleColor(2);
         }
         else
         {
+            ImGui::Spacing();
             ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
-                               "Select an object to inspect");
+                               "No object selected");
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(0.45f, 0.45f, 0.48f, 1.0f),
+                               "Select an object from the Scene\npanel to view and edit\nits properties here.");
         }
     }
     ImGui::End();
@@ -669,8 +854,15 @@ void draw_browser()
 
     if (ImGui::Begin("Asset Browser", &g_show_browser))
     {
+        // Header with refresh button
+        ImGui::BeginGroup();
         if (ImGui::Button("Refresh", ImVec2(80, 0)))
+        {
             scene::scan_models();
+            log(2, "Asset browser refreshed");
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Rescan for model files");
         ImGui::SameLine();
 
         std::size_t visible_count =
@@ -688,11 +880,13 @@ void draw_browser()
         ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
                            "%s",
                            std::format("{} models", visible_count).c_str());
+        ImGui::EndGroup();
 
         ImGui::Separator();
 
-        // Search filter
-        ImGui::SetNextItemWidth(-1);
+        // Enhanced search filter with clear button
+        ImGui::BeginGroup();
+        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 30);
         char filter_buf[256] = {};
         std::strncpy(
             filter_buf, g_browser_filter.c_str(), sizeof(filter_buf) - 1);
@@ -701,6 +895,19 @@ void draw_browser()
                                      filter_buf,
                                      sizeof(filter_buf)))
             g_browser_filter = filter_buf;
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Filter models by filename");
+        if (g_browser_filter[0] != '\0')
+        {
+            ImGui::SameLine();
+            if (ImGui::SmallButton("X"))
+            {
+                g_browser_filter.clear();
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Clear search filter");
+        }
+        ImGui::EndGroup();
 
         ImGui::Spacing();
 
@@ -718,8 +925,22 @@ void draw_browser()
 
             auto safe_name = sanitize_utf8(name);
             bool sel       = std::cmp_equal(i, scene::g_browser_sel);
+            
+            // Show file extension as hint
+            auto ext = std::filesystem::path(scene::g_model_files[i]).extension().string();
+            std::ranges::transform(ext, ext.begin(), ::tolower);
+            
             if (ImGui::Selectable(safe_name.c_str(), sel))
                 scene::g_browser_sel = static_cast<int>(i);
+            
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::BeginTooltip();
+                ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "%s", safe_name.c_str());
+                ImGui::Text("Type: %s", ext.c_str());
+                ImGui::Text("Path: %s", sanitize_utf8(scene::g_model_files[i]).c_str());
+                ImGui::EndTooltip();
+            }
         }
         ImGui::EndChild();
 
@@ -740,9 +961,17 @@ void draw_browser()
                                  { 0, 0, 6 },
                                  0.1f);
             if (m)
+            {
                 m->animate = true;
-            scene::g_selected = static_cast<int>(scene::g_models.size()) - 1;
+                int new_idx = static_cast<int>(scene::g_models.size()) - 1;
+                scene::g_selected = new_idx;
+                scene::g_selected_set.clear();
+                scene::g_selected_set.insert(new_idx);
+                log(2, "Added model to scene: " + sanitize_utf8(m->name));
+            }
         }
+        if (ImGui::IsItemHovered() && ok)
+            ImGui::SetTooltip("Add selected model to the scene at origin");
         if (!ok)
             ImGui::EndDisabled();
         ImGui::PopStyleColor();
@@ -1358,12 +1587,18 @@ void draw_console()
 
     if (ImGui::Begin("Console", &g_show_console))
     {
-        // Toolbar
+        // Enhanced toolbar
+        ImGui::BeginGroup();
         if (ImGui::Button("Clear", ImVec2(60, 0)))
+        {
             log_clear();
+            log(2, "Console cleared");
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Clear all log entries");
         ImGui::SameLine();
 
-        // Filter input
+        // Enhanced filter input with clear button
         ImGui::SetNextItemWidth(200);
         char filter_buf[256] = {};
         std::strncpy(
@@ -1371,6 +1606,18 @@ void draw_console()
         if (ImGui::InputTextWithHint(
                 "##filter", "Filter...", filter_buf, sizeof(filter_buf)))
             g_console_filter = filter_buf;
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Filter log entries by text");
+        if (g_console_filter[0] != '\0')
+        {
+            ImGui::SameLine();
+            if (ImGui::SmallButton("X"))
+            {
+                g_console_filter.clear();
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("Clear filter");
+        }
         ImGui::SameLine();
 
         std::size_t entry_count =
@@ -1386,10 +1633,11 @@ void draw_console()
         ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
                            "%s",
                            std::format("{} entries", entry_count).c_str());
+        ImGui::EndGroup();
 
         ImGui::Separator();
 
-        // Log view
+        // Enhanced log view with better formatting
         ImGui::BeginChild(
             "##log", ImVec2(0, 0), true, ImGuiWindowFlags_HorizontalScrollbar);
 
@@ -1401,13 +1649,13 @@ void draw_console()
                 e.message.find(g_console_filter) == std::string::npos)
                 continue;
 
-            // Timestamp
-            auto time_str = std::format("[{:.1f}]", e.time);
+            // Timestamp with better formatting
+            auto time_str = std::format("[{:.1f}s]", e.time);
             ImGui::TextColored(
                 ImVec4(0.45f, 0.45f, 0.48f, 1.0f), "%s", time_str.c_str());
             ImGui::SameLine();
 
-            // Level tag and color
+            // Level tag with consistent width
             ImVec4      col;
             const char* tag;
             switch (e.level)
@@ -1422,11 +1670,11 @@ void draw_console()
                     break;
                 case 2:
                     col = ImVec4(0.38f, 0.68f, 0.93f, 1.0f);
-                    tag = "INFO";
+                    tag = "INFO ";
                     break;
                 case 3:
                     col = ImVec4(0.95f, 0.75f, 0.30f, 1.0f);
-                    tag = "WARN";
+                    tag = "WARN ";
                     break;
                 case 4:
                     col = ImVec4(0.95f, 0.40f, 0.40f, 1.0f);
@@ -1434,7 +1682,7 @@ void draw_console()
                     break;
                 default:
                     col = ImVec4(0.70f, 0.70f, 0.70f, 1.0f);
-                    tag = "???";
+                    tag = "???  ";
                     break;
             }
 
@@ -1453,6 +1701,146 @@ void draw_console()
         }
 
         ImGui::EndChild();
+    }
+    ImGui::End();
+}
+
+void draw_shortcuts()
+{
+    if (!g_show_shortcuts)
+        return;
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::SetNextWindowPos(
+        ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
+        ImGuiCond_Appearing,
+        ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowSize(ImVec2(600, 500), ImGuiCond_Appearing);
+    ImGui::SetNextWindowSizeConstraints(ImVec2(500, 400),
+                                        ImVec2(800, io.DisplaySize.y - 60));
+
+    if (ImGui::Begin("Keyboard Shortcuts", &g_show_shortcuts))
+    {
+        ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f),
+                           "Keyboard Shortcuts");
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        // Camera Controls
+        if (ImGui::CollapsingHeader("Camera Controls", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Columns(2, "shortcuts", false);
+            ImGui::SetColumnWidth(0, 200);
+            
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "W/A/S/D");
+            ImGui::NextColumn();
+            ImGui::Text("Move camera forward/left/backward/right");
+            ImGui::NextColumn();
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "Q/E");
+            ImGui::NextColumn();
+            ImGui::Text("Move camera down/up");
+            ImGui::NextColumn();
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "Shift");
+            ImGui::NextColumn();
+            ImGui::Text("Hold to move faster");
+            ImGui::NextColumn();
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "ESC");
+            ImGui::NextColumn();
+            ImGui::Text("Release mouse capture");
+            ImGui::NextColumn();
+
+            ImGui::Columns(1);
+        }
+
+        // View Controls
+        if (ImGui::CollapsingHeader("View Controls"))
+        {
+            ImGui::Columns(2, "shortcuts2", false);
+            ImGui::SetColumnWidth(0, 200);
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "Tab");
+            ImGui::NextColumn();
+            ImGui::Text("Toggle wireframe mode");
+            ImGui::NextColumn();
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "Space");
+            ImGui::NextColumn();
+            ImGui::Text("Toggle auto animation");
+            ImGui::NextColumn();
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "F11");
+            ImGui::NextColumn();
+            ImGui::Text("Toggle fullscreen");
+            ImGui::NextColumn();
+
+            ImGui::Columns(1);
+        }
+
+        // File Operations
+        if (ImGui::CollapsingHeader("File Operations"))
+        {
+            ImGui::Columns(2, "shortcuts3", false);
+            ImGui::SetColumnWidth(0, 200);
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "F5");
+            ImGui::NextColumn();
+            ImGui::Text("Hot reload shaders and game module");
+            ImGui::NextColumn();
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "Ctrl+O");
+            ImGui::NextColumn();
+            ImGui::Text("Open scene file dialog");
+            ImGui::NextColumn();
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "Ctrl+N");
+            ImGui::NextColumn();
+            ImGui::Text("Clear scene");
+            ImGui::NextColumn();
+
+            ImGui::Columns(1);
+        }
+
+        // UI Controls
+        if (ImGui::CollapsingHeader("UI Controls"))
+        {
+            ImGui::Columns(2, "shortcuts4", false);
+            ImGui::SetColumnWidth(0, 200);
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "` (Grave)");
+            ImGui::NextColumn();
+            ImGui::Text("Toggle console");
+            ImGui::NextColumn();
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "F1");
+            ImGui::NextColumn();
+            ImGui::Text("Show this shortcuts window");
+            ImGui::NextColumn();
+
+            ImGui::Columns(1);
+        }
+
+        // Object Interaction
+        if (ImGui::CollapsingHeader("Object Interaction"))
+        {
+            ImGui::Columns(2, "shortcuts5", false);
+            ImGui::SetColumnWidth(0, 200);
+
+            ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "Double-Click");
+            ImGui::NextColumn();
+            ImGui::Text("Focus camera on selected object");
+            ImGui::NextColumn();
+
+            ImGui::Columns(1);
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f),
+                           "Tip: Click in the 3D viewport to capture mouse and control the camera");
     }
     ImGui::End();
 }
@@ -1480,9 +1868,9 @@ void draw_statusbar(euengine::engine_context* ctx)
         const char* help =
             ctx->input.mouse_captured
                 ? "WASD Move | QE Up/Down | Shift Speed | Space Animate | Tab "
-                  "Wireframe | F5 Reload | ESC Release"
+                  "Wireframe | F5 Reload | ESC Release | F1 Help"
                 : "Click to capture mouse | F5 Reload | F11 Fullscreen | ` "
-                  "Console";
+                  "Console | F1 Shortcuts";
 
         ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.58f, 1.0f), "%s", help);
     }
@@ -1531,6 +1919,7 @@ void draw(euengine::engine_context* ctx)
     draw_stats(ctx);
     draw_console();
     draw_file_dialog();
+    draw_shortcuts();
     draw_statusbar(ctx);
 
     // Reset window layout flag after all windows have been drawn
@@ -1556,14 +1945,20 @@ void draw_file_dialog()
         ImVec2(io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f),
         ImGuiCond_Appearing,
         ImVec2(0.5f, 0.5f));
-    ImGui::SetNextWindowSize(ImVec2(650, 450), ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize(ImVec2(700, 500), ImGuiCond_Appearing);
 
-    if (ImGui::Begin("Load Godot Scene File",
+    if (ImGui::Begin("Load glTF/GLB Scene",
                      &g_show_file_dialog,
                      ImGuiWindowFlags_NoCollapse))
     {
-        // Current path display with copy button
-        ImGui::Text("Path:");
+        // Header with file type info
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.8f, 1.0f, 1.0f));
+        ImGui::TextWrapped("Select a glTF (.gltf) or GLB (.glb) scene file to load");
+        ImGui::PopStyleColor();
+        ImGui::Spacing();
+
+        // Current path display
+        ImGui::Text("Current Directory:");
         ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.9f, 1.0f, 1.0f));
         ImGui::TextWrapped(
@@ -1572,8 +1967,9 @@ void draw_file_dialog()
 
         ImGui::Separator();
 
-        // Navigation buttons
-        if (ImGui::Button("Up", ImVec2(60, 0)))
+        // Navigation buttons with better styling
+        ImGui::Spacing();
+        if (ImGui::Button("^ Up", ImVec2(80, 0)))
         {
             if (g_file_dialog_current_path.has_parent_path())
             {
@@ -1583,20 +1979,20 @@ void draw_file_dialog()
             }
         }
         ImGui::SameLine();
-        if (ImGui::Button("Home", ImVec2(60, 0)))
+        if (ImGui::Button("Home", ImVec2(80, 0)))
         {
             g_file_dialog_current_path = std::filesystem::path(
                 std::getenv("HOME") ? std::getenv("HOME") : ".");
             g_file_dialog_selected_file.clear();
         }
         ImGui::SameLine();
-        if (ImGui::Button("Current", ImVec2(70, 0)))
+        if (ImGui::Button("Current", ImVec2(90, 0)))
         {
             g_file_dialog_current_path = std::filesystem::current_path();
             g_file_dialog_selected_file.clear();
         }
         ImGui::SameLine();
-        if (ImGui::Button("Assets", ImVec2(70, 0)))
+        if (ImGui::Button("Assets", ImVec2(90, 0)))
         {
             g_file_dialog_current_path = std::filesystem::path("assets");
             g_file_dialog_selected_file.clear();
@@ -1694,7 +2090,7 @@ void draw_file_dialog()
                     if (ImGui::Selectable(dir_label.c_str(),
                                           false,
                                           ImGuiSelectableFlags_AllowDoubleClick,
-                                          ImVec2(0, 22)))
+                                          ImVec2(0, 24)))
                     {
                         if (ImGui::IsMouseDoubleClicked(0))
                         {
@@ -1706,12 +2102,31 @@ void draw_file_dialog()
                 }
                 else if (is_gltf)
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Text,
-                                          ImVec4(1.0f, 0.9f, 0.5f, 1.0f));
-                    if (ImGui::Selectable(name.c_str(),
+                    // Different colors for .gltf vs .glb
+                    ImVec4 file_color = (ext == ".glb") 
+                        ? ImVec4(0.6f, 0.9f, 1.0f, 1.0f)  // Cyan for GLB
+                        : ImVec4(1.0f, 0.9f, 0.6f, 1.0f); // Yellow for glTF
+                    
+                    // Show file type prefix
+                    std::string file_label = (ext == ".glb") ? "[GLB] " : "[glTF] ";
+                    file_label += name;
+                    
+                    // Highlight selected file
+                    if (is_selected)
+                    {
+                        ImGui::PushStyleColor(ImGuiCol_Header, 
+                                              ImVec4(0.3f, 0.5f, 0.7f, 0.5f));
+                        ImGui::PushStyleColor(ImGuiCol_HeaderHovered, 
+                                              ImVec4(0.4f, 0.6f, 0.8f, 0.7f));
+                        ImGui::PushStyleColor(ImGuiCol_HeaderActive, 
+                                              ImVec4(0.5f, 0.7f, 0.9f, 0.9f));
+                    }
+                    
+                    ImGui::PushStyleColor(ImGuiCol_Text, file_color);
+                    if (ImGui::Selectable(file_label.c_str(),
                                           is_selected,
                                           ImGuiSelectableFlags_AllowDoubleClick,
-                                          ImVec2(0, 22)))
+                                          ImVec2(0, 24)))
                     {
                         // Always update selection on click - normalize path
                         try
@@ -1749,10 +2164,15 @@ void draw_file_dialog()
                         // Double-click to load immediately
                         if (ImGui::IsMouseDoubleClicked(0))
                         {
-                            load_gltf_scene(g_file_dialog_selected_file);
+                            load_gltf_glb_scene(g_file_dialog_selected_file);
                         }
                     }
                     ImGui::PopStyleColor();
+                    
+                    if (is_selected)
+                    {
+                        ImGui::PopStyleColor(3);
+                    }
                 }
             }
         }
@@ -1767,26 +2187,59 @@ void draw_file_dialog()
 
         ImGui::Separator();
 
-        // Selected file display and action buttons
-        ImGui::Text("Selected:");
+        // Selected file display with better formatting
+        ImGui::Spacing();
+        ImGui::Text("Selected File:");
         ImGui::SameLine();
         if (!g_file_dialog_selected_file.empty())
         {
+            auto ext = g_file_dialog_selected_file.extension().string();
+            std::ranges::transform(ext, ext.begin(), ::tolower);
+            std::string file_type = (ext == ".glb") ? "GLB" : "glTF";
+            
             ImGui::PushStyleColor(ImGuiCol_Text,
                                   ImVec4(1.0f, 0.9f, 0.5f, 1.0f));
             std::string filename =
                 g_file_dialog_selected_file.filename().string();
             ImGui::Text("%s", sanitize_utf8(filename).c_str());
             ImGui::PopStyleColor();
+            
+            // Show file type and size
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
+            ImGui::Text("(%s)", file_type.c_str());
+            ImGui::PopStyleColor();
+            
+            // Try to show file size
+            try
+            {
+                if (std::filesystem::exists(g_file_dialog_selected_file))
+                {
+                    auto file_size = std::filesystem::file_size(g_file_dialog_selected_file);
+                    std::string size_str;
+                    if (file_size < 1024)
+                        size_str = std::to_string(file_size) + " B";
+                    else if (file_size < 1024 * 1024)
+                        size_str = std::to_string(file_size / 1024) + " KB";
+                    else
+                        size_str = std::to_string(file_size / (1024 * 1024)) + " MB";
+                    
+                    ImGui::SameLine();
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+                    ImGui::Text(" - %s", size_str.c_str());
+                    ImGui::PopStyleColor();
+                }
+            }
+            catch (...) {}
         }
         else
         {
-            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "None");
+            ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "No file selected");
         }
 
         ImGui::Spacing();
 
-        // Action buttons
+        // Action buttons with better styling
         bool has_selection = false;
         if (!g_file_dialog_selected_file.empty())
         {
@@ -1803,37 +2256,55 @@ void draw_file_dialog()
             }
         }
 
-        // Debug info
+        // Error message
         if (!g_file_dialog_selected_file.empty() && !has_selection)
         {
-            ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f),
-                               "File not found or invalid");
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+            ImGui::Text("! File not found or invalid");
+            ImGui::PopStyleColor();
+            ImGui::Spacing();
         }
 
+        // Button layout
+        float button_width = 120.0f;
+        float spacing = ImGui::GetStyle().ItemSpacing.x;
+        float available_width = ImGui::GetContentRegionAvail().x;
+        float buttons_width = button_width * 2 + spacing;
+        float offset = (available_width - buttons_width) * 0.5f;
+        
+        if (offset > 0)
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offset);
+
         ImGui::BeginDisabled(!has_selection);
-        if (ImGui::Button("Open", ImVec2(100, 30)))
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.6f, 0.9f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.7f, 1.0f, 1.0f));
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.5f, 0.8f, 1.0f));
+        if (ImGui::Button("Load Scene", ImVec2(button_width, 35)))
         {
             if (has_selection && !g_file_dialog_selected_file.empty())
             {
-                load_gltf_scene(g_file_dialog_selected_file);
+                load_gltf_glb_scene(g_file_dialog_selected_file);
             }
             else
             {
-                log(4, "Open button clicked but no valid selection");
+                log(4, "Load button clicked but no valid selection");
             }
         }
+        ImGui::PopStyleColor(3);
         ImGui::EndDisabled();
 
         ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(100, 30)))
+        if (ImGui::Button("Cancel", ImVec2(button_width, 35)))
         {
             g_show_file_dialog = false;
             g_file_dialog_selected_file.clear();
         }
 
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
-                           "Double-click to open");
+        // Help text
+        ImGui::Spacing();
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        ImGui::TextWrapped("Tip: Double-click a file to load it immediately");
+        ImGui::PopStyleColor();
     }
     ImGui::End();
 }

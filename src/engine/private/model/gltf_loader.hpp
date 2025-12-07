@@ -9,17 +9,17 @@ namespace euengine
 {
 
 /// glTF 2.0 file format loader
-class GltfLoader final : public IModelLoader
+class gltf_loader final : public IModelLoader
 {
 public:
-    GltfLoader()           = default;
-    ~GltfLoader() override = default;
+    gltf_loader()           = default;
+    ~gltf_loader() override = default;
 
     // Non-copyable, non-movable
-    GltfLoader(const GltfLoader&)            = delete;
-    GltfLoader& operator=(const GltfLoader&) = delete;
-    GltfLoader(GltfLoader&&)                 = delete;
-    GltfLoader& operator=(GltfLoader&&)      = delete;
+    gltf_loader(const gltf_loader&)            = delete;
+    gltf_loader& operator=(const gltf_loader&) = delete;
+    gltf_loader(gltf_loader&&)                 = delete;
+    gltf_loader& operator=(gltf_loader&&)      = delete;
 
     [[nodiscard]] load_result load(
         const std::filesystem::path& path) const override;

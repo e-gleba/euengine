@@ -8,7 +8,7 @@
 namespace euengine
 {
 
-class ImGuiLayer
+class ImGuiLayer final
 {
 public:
     using DrawCallback = std::function<void()>;

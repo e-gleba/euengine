@@ -33,85 +33,8 @@ void setup_scene()
 {
     rebuild_grid();
 
-    // Organized showcase layout - spread out for better visibility
-    // All animations disabled by default
-
-    // Front row: vehicles - moved further back and to sides to not block duck
-    add_model("assets/models/tanks/t72/t72_base.obj", { -15, 0, 15 }, 0.07f);
-    add_model(
-        "assets/models/tanks/sherman/sherman_base.obj", { -8, 0, 15 }, 0.07f);
-    add_model(
-        "assets/models/btrs/btr_rocket/btr_rocket.obj", { 8, 0, 15 }, 0.07f);
-    add_model("assets/models/cannons/aagunvulcan/aagunvulcan_base.obj",
-              { 15, 0, 15 },
-              0.09f);
-
-    // Moving jeep - rides in a wider loop (behind tanks, away from duck)
-    if (auto* m =
-            add_model("assets/models/jeeps/uaz/uaz.obj", { -18, 0, 10 }, 0.07f))
-    {
-        m->moving               = true;
-        m->move_speed           = 0.4f;
-        m->move_dir             = 1.0f;
-        m->move_start           = { -18, 0, 10 };
-        m->move_end             = { 18, 0, 10 };
-        m->transform.rotation.y = 90.0f;
-    }
-
-    // Middle row: aircraft - moved further back, higher up, wider spacing
-    if (auto* m = add_model(
-            "assets/models/helics/kamov/kamov.obj", { -10, 1.6f, 0 }, 0.07f))
-    {
-        m->hover       = true;
-        m->hover_base  = 1.6f;
-        m->hover_range = 0.12f;
-    }
-    if (auto* m = add_model(
-            "assets/models/helics/mi_24/mi_24.obj", { 0, 1.9f, 0 }, 0.07f))
-    {
-        m->hover       = true;
-        m->hover_base  = 1.9f;
-        m->hover_speed = 1.2f;
-        m->hover_range = 0.14f;
-    }
-    if (auto* m = add_model(
-            "assets/models/helics/cobra/cobra.obj", { 10, 1.7f, 0 }, 0.07f))
-    {
-        m->hover       = true;
-        m->hover_base  = 1.7f;
-        m->hover_speed = 1.5f;
-        m->hover_range = 0.10f;
-    }
-
-    // Back row: structures - much wider spacing to avoid overlap
-    add_model("assets/models/mapobjects/cisterns/cisterna01.obj",
-              { -26, 0, -16 },
-              0.09f);
-    if (auto* temple = add_model("assets/models/mapobjects/houses/temple.obj",
-                                 { -9, 0, -16 },
-                                 0.08f))
-    {
-        temple->transform.rotation.y = 180.0f; // Rotate 180 degrees
-    }
-    add_model("assets/models/mapobjects/factory/oil_refinery/oil_refinery.obj",
-              { 9, 0, -16 },
-              0.07f);
-    add_model(
-        "assets/models/mapobjects/radar/radar.obj", { 26, 0, -16 }, 0.09f);
-
-    // Sides: ships - further out and spread
-    add_model("assets/models/ships/lodka/lodka.obj", { -20, 0, -4 }, 0.06f);
-    add_model("assets/models/ships/rocket_boat/rocket_boat.obj",
-              { 20, 0, -4 },
-              0.05f);
-
-    // Center: featured duck - very close to camera, static, smaller
-    if (auto* m = add_model(
-            "assets/models/samples/duck.glb", { 0, 0.1f, 22 }, 0.025f))
-    {
-        m->transform.rotation.y =
-            180.0f; // Face camera initially, but static (no rotation)
-    }
+    // Load duck at origin with scale 1.0
+    add_model("assets/models/samples/duck.glb", { 0, 0, 0 }, 1.0f);
 }
 
 void process_input()
@@ -160,7 +83,7 @@ void process_input()
     if (g_ctx->input.keyboard[key_q])
         cam.position.y -= speed;
 
-    static bool keys[8] = {};
+    static bool keys[8] = {}; // Increased for F1
 
     if (g_ctx->input.keyboard[key_space] && !keys[0])
         ui::g_auto_rotate = !ui::g_auto_rotate;
@@ -188,6 +111,11 @@ void process_input()
     if (g_ctx->input.keyboard[key_grave] && !keys[4])
         ui::g_show_console = !ui::g_show_console;
     keys[4] = g_ctx->input.keyboard[key_grave];
+
+    constexpr int key_f1 = 58;
+    if (g_ctx->input.keyboard[key_f1] && !keys[5])
+        ui::g_show_shortcuts = !ui::g_show_shortcuts;
+    keys[5] = g_ctx->input.keyboard[key_f1];
 
     g_ctx->renderer->set_view_projection(cam.projection(g_ctx->display.aspect) *
                                          cam.view());
@@ -356,13 +284,22 @@ void render(euengine::engine_context* ctx)
     if (g_show_origin && g_origin_axis != euengine::invalid_mesh)
         ctx->renderer->draw(g_origin_axis);
 
-    // Draw models last
+    // Draw all models first
     for (auto& m : g_models)
     {
         ctx->renderer->draw_model(m.handle, m.transform);
-        if (&m - g_models.data() == g_selected)
+    }
+    
+    // Draw bounds for all selected objects after all models
+    // This ensures bounds are always visible on top
+    for (std::size_t i = 0; i < g_models.size(); ++i)
+    {
+        if (g_selected_set.find(static_cast<int>(i)) != g_selected_set.end() ||
+            static_cast<int>(i) == g_selected)
+        {
             ctx->renderer->draw_bounds(
-                m.bounds, m.transform, { 1.0f, 0.6f, 0.1f });
+                g_models[i].bounds, g_models[i].transform, { 1.0f, 0.6f, 0.1f });
+        }
     }
 }
 
@@ -452,12 +389,12 @@ model_instance* add_model(const std::string& path,
                           const glm::vec3&   pos,
                           float              scale)
 {
-    auto handle = g_ctx->renderer->load_model(path);
+    std::filesystem::path model_path(path);
+    auto handle = g_ctx->renderer->load_model(model_path);
     if (handle == euengine::invalid_model)
     {
         ui::log(4,
-                "Failed to load: " +
-                    std::filesystem::path(path).filename().string());
+                "Failed to load: " + model_path.filename().string());
         return nullptr;
     }
 
@@ -483,7 +420,26 @@ void remove_model(int idx)
     g_ctx->renderer->unload_model(
         g_models[static_cast<std::size_t>(idx)].handle);
     g_models.erase(g_models.begin() + idx);
-    g_selected = -1;
+    
+    // Update selections - remove deleted index and adjust others
+    g_selected_set.erase(idx);
+    std::set<int> new_selection;
+    for (int sel : g_selected_set)
+    {
+        if (sel > idx)
+            new_selection.insert(sel - 1);
+        else if (sel < idx)
+            new_selection.insert(sel);
+    }
+    g_selected_set = std::move(new_selection);
+    
+    if (g_selected == idx)
+        g_selected = -1;
+    else if (g_selected > idx)
+        g_selected--;
+    
+    if (g_selected == -1 && !g_selected_set.empty())
+        g_selected = *g_selected_set.begin();
 }
 
 model_instance* duplicate_model(int idx)
@@ -497,7 +453,8 @@ model_instance* duplicate_model(int idx)
     glm::vec3 new_pos = src.transform.position + glm::vec3(2.0f, 0.0f, 2.0f);
 
     model_instance m;
-    m.handle             = g_ctx->renderer->load_model(src.path);
+    std::filesystem::path model_path(src.path);
+    m.handle             = g_ctx->renderer->load_model(model_path);
     m.path               = src.path;
     m.name               = src.name + "_copy";
     m.bounds             = g_ctx->renderer->get_bounds(m.handle);
@@ -516,7 +473,10 @@ model_instance* duplicate_model(int idx)
     m.color_tint         = src.color_tint;
 
     g_models.push_back(std::move(m));
-    g_selected = static_cast<int>(g_models.size()) - 1;
+    int new_idx = static_cast<int>(g_models.size()) - 1;
+    g_selected = new_idx;
+    g_selected_set.clear();
+    g_selected_set.insert(new_idx);
     ui::log(2, "Duplicated: " + src.name);
     return &g_models.back();
 }
@@ -565,6 +525,23 @@ void focus_camera_on_object(int idx)
     cam.pitch = glm::clamp(cam.pitch, -89.0f, 89.0f);
 
     ui::log(2, "Focused camera on: " + obj.name);
+}
+
+void teleport_object_to_camera(int idx)
+{
+    if (idx < 0 || static_cast<std::size_t>(idx) >= g_models.size())
+        return;
+    if (g_camera == entt::null || !g_ctx->registry->valid(g_camera))
+        return;
+
+    auto& obj = g_models[static_cast<std::size_t>(idx)];
+    auto& cam = g_ctx->registry->get<euengine::camera_component>(g_camera);
+
+    // Teleport object to camera position (slightly in front)
+    glm::vec3 forward = cam.front();
+    obj.transform.position = cam.position + forward * 2.0f; // 2 units in front of camera
+    
+    ui::log(2, "Teleported " + obj.name + " to camera position");
 }
 
 void apply_sky()

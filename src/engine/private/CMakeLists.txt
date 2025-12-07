@@ -1,11 +1,5 @@
-add_executable(engine)
-
-file(
-    GLOB_RECURSE engine_src
-    CONFIGURE_DEPENDS
-    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-)
-target_sources(engine PRIVATE ${engine_src})
+file(GLOB engine_src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+add_executable(engine ${engine_src})
 
 target_include_directories(engine PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
@@ -14,11 +8,12 @@ set_target_properties(
     PROPERTIES CXX_STANDARD 26 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
 )
 
-add_subdirectory(model-loaders)
-
+add_subdirectory(model)
 target_link_libraries(
     engine
     PRIVATE
+        engine_interface
+        euengine::model
         warnings
         glm
         EnTT::EnTT
@@ -30,9 +25,6 @@ target_link_libraries(
         stb
         imgui_sdl3
         pybind11::embed
-        model-loaders
-        fastgltf::fastgltf
-        engine_interface
 )
 
 add_custom_command(

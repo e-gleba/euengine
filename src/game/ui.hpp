@@ -36,6 +36,7 @@ inline bool g_show_engine      = true;
 inline bool g_show_console     = false;
 inline bool g_show_stats       = true;
 inline bool g_show_file_dialog = false;
+inline bool g_show_shortcuts   = false;
 
 // Scene
 inline bool  g_wireframe     = false;

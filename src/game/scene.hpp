@@ -1,6 +1,7 @@
 #pragma once
 
 #include <core-api/game.hpp>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -46,7 +47,8 @@ inline bool                  g_show_origin = true;
 inline entt::entity          g_camera      = entt::null;
 
 inline std::vector<model_instance> g_models;
-inline int                         g_selected = -1;
+inline int                         g_selected = -1; // Primary selection (for backward compatibility)
+inline std::set<int>               g_selected_set; // Multi-selection set
 
 inline std::vector<audio_file> g_audio;
 inline int                     g_playing = -1;
@@ -84,6 +86,7 @@ model_instance* add_model(const std::string& path,
 void            remove_model(int idx);
 model_instance* duplicate_model(int idx);
 void            focus_camera_on_object(int idx);
+void            teleport_object_to_camera(int idx);
 void            apply_sky();
 void            rebuild_grid();
 
