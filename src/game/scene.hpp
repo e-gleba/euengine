@@ -47,8 +47,8 @@ inline bool                  g_show_origin = true;
 inline entt::entity          g_camera      = entt::null;
 
 inline std::vector<model_instance> g_models;
-inline int                         g_selected = -1; // Primary selection (for backward compatibility)
-inline std::set<int>               g_selected_set; // Multi-selection set
+inline int g_selected = -1; // Primary selection (for backward compatibility)
+inline std::set<int> g_selected_set; // Multi-selection set
 
 inline std::vector<audio_file> g_audio;
 inline int                     g_playing = -1;

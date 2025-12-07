@@ -120,12 +120,16 @@ std::expected<texture_data, std::string> load_texture_from_memory(
     std::int32_t ch = 0;
 
     stbi_set_flip_vertically_on_load(flip_vertical ? 1 : 0);
-    auto* pixels = stbi_load_from_memory(
-        static_cast<const stbi_uc*>(data), static_cast<int>(size), &w, &h, &ch, 4);
+    auto* pixels = stbi_load_from_memory(static_cast<const stbi_uc*>(data),
+                                         static_cast<int>(size),
+                                         &w,
+                                         &h,
+                                         &ch,
+                                         4);
     if (pixels == nullptr)
     {
-        return std::unexpected(
-            std::format("stbi_load_from_memory failed: {}", stbi_failure_reason()));
+        return std::unexpected(std::format("stbi_load_from_memory failed: {}",
+                                           stbi_failure_reason()));
     }
 
     // Create GPU texture

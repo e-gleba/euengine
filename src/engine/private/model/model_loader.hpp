@@ -12,13 +12,14 @@
 namespace euengine
 {
 
-/// Vertex with position, normal, texture coordinates, and optional skinning/morph data
+/// Vertex with position, normal, texture coordinates, and optional
+/// skinning/morph data
 struct model_vertex final
 {
     glm::vec3 position {};
     glm::vec3 normal { 0.0f, 1.0f, 0.0f };
     glm::vec2 texcoord {};
-    
+
     // Skinning (up to 4 joints per vertex)
     glm::uvec4 joints { 0, 0, 0, 0 };
     glm::vec4  weights { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -60,33 +61,35 @@ struct aabb final
 /// Texture type/usage
 enum class texture_type : uint8_t
 {
-    base_color,      // Albedo/diffuse
-    normal,          // Normal map
+    base_color,         // Albedo/diffuse
+    normal,             // Normal map
     metallic_roughness, // Metallic-roughness map
-    occlusion,       // Ambient occlusion
-    emissive,        // Emissive map
-    unknown,         // Unknown/unspecified
+    occlusion,          // Ambient occlusion
+    emissive,           // Emissive map
+    unknown,            // Unknown/unspecified
 };
 
 /// Texture information
 struct model_texture final
 {
-    std::filesystem::path path;           // Path to texture file (empty if embedded)
+    std::filesystem::path path; // Path to texture file (empty if embedded)
     texture_type          type = texture_type::base_color;
-    std::vector<uint8_t>  embedded_data;  // Embedded texture data (if path is empty)
-    std::string           mime_type;      // MIME type for embedded textures (e.g., "image/png")
-    std::int32_t          width  = 0;     // Width (if known from metadata)
-    std::int32_t          height = 0;     // Height (if known from metadata)
-    bool                  is_embedded = false;
+    std::vector<uint8_t>
+        embedded_data; // Embedded texture data (if path is empty)
+    std::string
+        mime_type; // MIME type for embedded textures (e.g., "image/png")
+    std::int32_t width       = 0; // Width (if known from metadata)
+    std::int32_t height      = 0; // Height (if known from metadata)
+    bool         is_embedded = false;
 };
 
 /// Morph target (blend shape)
 struct morph_target final
 {
-    std::string                    name;
-    std::vector<glm::vec3>         positions;  // Position deltas
-    std::vector<glm::vec3>         normals;    // Normal deltas (optional)
-    std::vector<glm::vec3>         tangents;   // Tangent deltas (optional)
+    std::string            name;
+    std::vector<glm::vec3> positions; // Position deltas
+    std::vector<glm::vec3> normals;   // Normal deltas (optional)
+    std::vector<glm::vec3> tangents;  // Tangent deltas (optional)
 };
 
 /// Single mesh within a model
@@ -96,30 +99,31 @@ struct loaded_mesh final
     std::vector<uint16_t>     indices;
     std::string               material_name;
     std::size_t               material_index = 0; // Index into materials array
-    
+
     // Morph targets
     std::vector<morph_target> morph_targets;
-    
+
     // Skin index (if mesh is skinned)
-    std::size_t               skin_index = SIZE_MAX;
+    std::size_t skin_index = SIZE_MAX;
 };
 
 /// Material information
 struct model_material final
 {
-    std::string                    name;
-    std::size_t                    base_color_texture_index    = SIZE_MAX; // Index into textures array
-    std::size_t                    normal_texture_index        = SIZE_MAX;
-    std::size_t                    metallic_roughness_texture_index = SIZE_MAX;
-    std::size_t                    occlusion_texture_index     = SIZE_MAX;
-    std::size_t                    emissive_texture_index      = SIZE_MAX;
-    glm::vec4                      base_color_factor = glm::vec4(1.0f);
-    glm::vec3                      emissive_factor = glm::vec3(0.0f);
-    float                          metallic_factor   = 0.0f;
-    float                          roughness_factor  = 1.0f;
-    float                          alpha_cutoff = 0.5f;
-    bool                           double_sided = false;
-    bool                           unlit = false; // KHR_materials_unlit extension
+    std::string name;
+    std::size_t base_color_texture_index =
+        SIZE_MAX; // Index into textures array
+    std::size_t normal_texture_index             = SIZE_MAX;
+    std::size_t metallic_roughness_texture_index = SIZE_MAX;
+    std::size_t occlusion_texture_index          = SIZE_MAX;
+    std::size_t emissive_texture_index           = SIZE_MAX;
+    glm::vec4   base_color_factor                = glm::vec4(1.0f);
+    glm::vec3   emissive_factor                  = glm::vec3(0.0f);
+    float       metallic_factor                  = 0.0f;
+    float       roughness_factor                 = 1.0f;
+    float       alpha_cutoff                     = 0.5f;
+    bool        double_sided                     = false;
+    bool        unlit = false; // KHR_materials_unlit extension
 };
 
 /// Animation interpolation type
@@ -136,23 +140,24 @@ enum class animation_target_path : uint8_t
     translation,
     rotation,
     scale,
-    weights  // Morph target weights
+    weights // Morph target weights
 };
 
 /// Animation channel (targets a node property)
 struct animation_channel final
 {
-    std::size_t              sampler_index = SIZE_MAX;
-    std::size_t              target_node   = SIZE_MAX;
-    animation_target_path    target_path   = animation_target_path::translation;
+    std::size_t           sampler_index = SIZE_MAX;
+    std::size_t           target_node   = SIZE_MAX;
+    animation_target_path target_path   = animation_target_path::translation;
 };
 
 /// Animation sampler (keyframe data)
 struct animation_sampler final
 {
-    std::vector<float>              input;  // Time keyframes
-    std::vector<glm::vec4>          output; // Value keyframes (vec4 for translation/scale/rotation quat/weights)
-    animation_interpolation         interpolation = animation_interpolation::linear;
+    std::vector<float>     input;  // Time keyframes
+    std::vector<glm::vec4> output; // Value keyframes (vec4 for
+                                   // translation/scale/rotation quat/weights)
+    animation_interpolation interpolation = animation_interpolation::linear;
 };
 
 /// Animation (collection of channels and samplers)
@@ -167,27 +172,28 @@ struct model_animation final
 /// Joint (bone) in a skin
 struct joint final
 {
-    std::string     name;
-    glm::mat4       inverse_bind_matrix = glm::mat4(1.0f);
-    std::size_t     node_index = SIZE_MAX; // Index into scene nodes
+    std::string name;
+    glm::mat4   inverse_bind_matrix = glm::mat4(1.0f);
+    std::size_t node_index          = SIZE_MAX; // Index into scene nodes
 };
 
 /// Skin (skeleton for skinned meshes)
 struct model_skin final
 {
-    std::string              name;
-    std::vector<joint>       joints;
-    std::vector<glm::mat4>   inverse_bind_matrices; // Per-joint inverse bind matrices
-    std::size_t              skeleton_root = SIZE_MAX; // Root joint node index
+    std::string        name;
+    std::vector<joint> joints;
+    std::vector<glm::mat4>
+                inverse_bind_matrices;    // Per-joint inverse bind matrices
+    std::size_t skeleton_root = SIZE_MAX; // Root joint node index
 };
 
 /// Scene graph node
 struct scene_node final
 {
     std::string              name;
-    glm::mat4                transform = glm::mat4(1.0f);
-    std::size_t              mesh_index = SIZE_MAX; // Index into meshes array
-    std::size_t              skin_index = SIZE_MAX; // Index into skins array
+    glm::mat4                transform    = glm::mat4(1.0f);
+    std::size_t              mesh_index   = SIZE_MAX; // Index into meshes array
+    std::size_t              skin_index   = SIZE_MAX; // Index into skins array
     std::size_t              camera_index = SIZE_MAX;
     std::vector<std::size_t> children; // Indices of child nodes
 };
@@ -195,16 +201,17 @@ struct scene_node final
 /// Complete loaded model data
 struct loaded_model final
 {
-    std::vector<loaded_mesh>    meshes;
-    std::vector<model_texture>  textures;  // All textures used by the model
-    std::vector<model_material> materials; // All materials in the model
+    std::vector<loaded_mesh>     meshes;
+    std::vector<model_texture>   textures;   // All textures used by the model
+    std::vector<model_material>  materials;  // All materials in the model
     std::vector<model_animation> animations; // All animations
-    std::vector<model_skin>     skins; // All skins (skeletons)
-    std::vector<scene_node>     nodes; // Scene graph nodes
-    std::vector<std::size_t>    root_nodes; // Root node indices
-    std::filesystem::path       texture_path; // Legacy: first base color texture (for backward compat)
-    aabb                        bounds;
-    bool                        has_uvs = false;
+    std::vector<model_skin>      skins;      // All skins (skeletons)
+    std::vector<scene_node>      nodes;      // Scene graph nodes
+    std::vector<std::size_t>     root_nodes; // Root node indices
+    std::filesystem::path
+         texture_path; // Legacy: first base color texture (for backward compat)
+    aabb bounds;
+    bool has_uvs = false;
 
     [[nodiscard]] bool empty() const noexcept { return meshes.empty(); }
 
@@ -230,13 +237,14 @@ struct loaded_model final
 
     /// Get the primary texture path (for backward compatibility)
     /// Returns the first base color texture path, or empty if none
-    [[nodiscard]] std::filesystem::path get_primary_texture_path() const noexcept
+    [[nodiscard]] std::filesystem::path get_primary_texture_path()
+        const noexcept
     {
         if (!texture_path.empty())
         {
             return texture_path; // Legacy field
         }
-        
+
         // Find first base color texture
         for (const auto& tex : textures)
         {
@@ -245,7 +253,7 @@ struct loaded_model final
                 return tex.path;
             }
         }
-        
+
         return {};
     }
 };

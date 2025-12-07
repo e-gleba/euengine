@@ -53,11 +53,11 @@ struct gpu_textured_mesh final
 struct gpu_model final
 {
     std::vector<gpu_textured_mesh> meshes;
-    std::vector<texture_handle>    textures;  // All textures used by this model
-    texture_handle                 texture    = invalid_texture; // Legacy: primary texture
-    glm::vec3                      color      = glm::vec3(1.0f);
-    bounds                         model_bounds = {};
-    bool                           has_uvs    = false;
+    std::vector<texture_handle>    textures; // All textures used by this model
+    texture_handle texture      = invalid_texture; // Legacy: primary texture
+    glm::vec3      color        = glm::vec3(1.0f);
+    bounds         model_bounds = {};
+    bool           has_uvs      = false;
 };
 
 /// Vertex with position and color (wireframe)

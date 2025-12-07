@@ -1,6 +1,7 @@
 #include "scene.hpp"
 #include "ui.hpp"
 
+#include <algorithm>
 #include <core-api/camera.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -34,7 +35,7 @@ void setup_scene()
     rebuild_grid();
 
     // Load duck at origin with scale 1.0
-    add_model("assets/models/samples/duck.glb", { 0, 0, 0 }, 1.0f);
+    add_model("assets/models/duck.glb", { 0, 0, 0 }, 1.0f);
 }
 
 void process_input()
@@ -289,7 +290,7 @@ void render(euengine::engine_context* ctx)
     {
         ctx->renderer->draw_model(m.handle, m.transform);
     }
-    
+
     // Draw bounds for all selected objects after all models
     // This ensures bounds are always visible on top
     for (std::size_t i = 0; i < g_models.size(); ++i)
@@ -297,8 +298,9 @@ void render(euengine::engine_context* ctx)
         if (g_selected_set.find(static_cast<int>(i)) != g_selected_set.end() ||
             static_cast<int>(i) == g_selected)
         {
-            ctx->renderer->draw_bounds(
-                g_models[i].bounds, g_models[i].transform, { 1.0f, 0.6f, 0.1f });
+            ctx->renderer->draw_bounds(g_models[i].bounds,
+                                       g_models[i].transform,
+                                       { 1.0f, 0.6f, 0.1f });
         }
     }
 }
@@ -310,18 +312,24 @@ void scan_models()
 
     const std::string dir = "assets/models";
     if (!std::filesystem::exists(dir))
+    {
         return;
+    }
 
     for (const auto& e : std::filesystem::recursive_directory_iterator(dir))
     {
         if (!e.is_regular_file())
+        {
             continue;
+        }
         auto ext = e.path().extension().string();
         if (ext == ".obj" || ext == ".glb" || ext == ".gltf" || ext == ".OBJ" ||
             ext == ".GLB" || ext == ".GLTF")
+        {
             g_model_files.push_back(e.path().string());
+        }
     }
-    std::sort(g_model_files.begin(), g_model_files.end());
+    std::ranges::sort(g_model_files);
     ui::log(2, "Models: " + std::to_string(g_model_files.size()));
 }
 
@@ -331,7 +339,9 @@ void scan_scenes()
 
     const std::string dir = "assets";
     if (!std::filesystem::exists(dir))
+    {
         return;
+    }
 
     for (const auto& e : std::filesystem::recursive_directory_iterator(dir))
     {
@@ -390,11 +400,10 @@ model_instance* add_model(const std::string& path,
                           float              scale)
 {
     std::filesystem::path model_path(path);
-    auto handle = g_ctx->renderer->load_model(model_path);
+    auto                  handle = g_ctx->renderer->load_model(model_path);
     if (handle == euengine::invalid_model)
     {
-        ui::log(4,
-                "Failed to load: " + model_path.filename().string());
+        ui::log(4, "Failed to load: " + model_path.filename().string());
         return nullptr;
     }
 
@@ -420,7 +429,7 @@ void remove_model(int idx)
     g_ctx->renderer->unload_model(
         g_models[static_cast<std::size_t>(idx)].handle);
     g_models.erase(g_models.begin() + idx);
-    
+
     // Update selections - remove deleted index and adjust others
     g_selected_set.erase(idx);
     std::set<int> new_selection;
@@ -432,12 +441,12 @@ void remove_model(int idx)
             new_selection.insert(sel);
     }
     g_selected_set = std::move(new_selection);
-    
+
     if (g_selected == idx)
         g_selected = -1;
     else if (g_selected > idx)
         g_selected--;
-    
+
     if (g_selected == -1 && !g_selected_set.empty())
         g_selected = *g_selected_set.begin();
 }
@@ -452,7 +461,7 @@ model_instance* duplicate_model(int idx)
     // Create duplicate with offset position
     glm::vec3 new_pos = src.transform.position + glm::vec3(2.0f, 0.0f, 2.0f);
 
-    model_instance m;
+    model_instance        m;
     std::filesystem::path model_path(src.path);
     m.handle             = g_ctx->renderer->load_model(model_path);
     m.path               = src.path;
@@ -474,7 +483,7 @@ model_instance* duplicate_model(int idx)
 
     g_models.push_back(std::move(m));
     int new_idx = static_cast<int>(g_models.size()) - 1;
-    g_selected = new_idx;
+    g_selected  = new_idx;
     g_selected_set.clear();
     g_selected_set.insert(new_idx);
     ui::log(2, "Duplicated: " + src.name);
@@ -539,8 +548,9 @@ void teleport_object_to_camera(int idx)
 
     // Teleport object to camera position (slightly in front)
     glm::vec3 forward = cam.front();
-    obj.transform.position = cam.position + forward * 2.0f; // 2 units in front of camera
-    
+    obj.transform.position =
+        cam.position + forward * 2.0f; // 2 units in front of camera
+
     ui::log(2, "Teleported " + obj.name + " to camera position");
 }
 

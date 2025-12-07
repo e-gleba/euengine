@@ -571,12 +571,14 @@ bool Renderer::create_wireframe_pipeline()
     }
 
     // Create bounds wireframe pipeline - disable depth test entirely
-    // This ensures bounding boxes are always visible, even when camera is inside the object
-    // This is how most game engines handle selection gizmos/bounding boxes
+    // This ensures bounding boxes are always visible, even when camera is
+    // inside the object This is how most game engines handle selection
+    // gizmos/bounding boxes
     pipeline_info.primitive_type = SDL_GPU_PRIMITIVETYPE_LINELIST;
-    depth_state.compare_op         = SDL_GPU_COMPAREOP_ALWAYS;
-    depth_state.enable_depth_test  = false; // Disable depth test - always render on top
-    depth_state.enable_depth_write = false; // Don't write to depth buffer
+    depth_state.compare_op       = SDL_GPU_COMPAREOP_ALWAYS;
+    depth_state.enable_depth_test =
+        false; // Disable depth test - always render on top
+    depth_state.enable_depth_write    = false; // Don't write to depth buffer
     pipeline_info.depth_stencil_state = depth_state;
 
     if (wireframe_bounds_pipeline_ != nullptr)
@@ -1373,11 +1375,11 @@ model_handle Renderer::load_model(const std::filesystem::path& path,
     // Load all textures from the model
     std::vector<texture_handle> loaded_textures;
     loaded_textures.reserve(data.textures.size());
-    
+
     for (const auto& model_tex : data.textures)
     {
         texture_handle tex = invalid_texture;
-        
+
         if (!model_tex.path.empty())
         {
             // Load from file
@@ -1391,7 +1393,7 @@ model_handle Renderer::load_model(const std::filesystem::path& path,
                 model_tex.embedded_data.data(),
                 model_tex.embedded_data.size(),
                 true);
-            
+
             if (tex_result)
             {
                 const auto h = next_texture_handle_++;
@@ -1399,20 +1401,21 @@ model_handle Renderer::load_model(const std::filesystem::path& path,
                                  .sampler = tex_result->sampler,
                                  .width   = tex_result->width,
                                  .height  = tex_result->height };
-                tex = h;
+                tex          = h;
                 spdlog::info("=> embedded texture: {}x{} ({})",
                              tex_result->width,
                              tex_result->height,
-                             model_tex.mime_type.empty() ? "unknown" : model_tex.mime_type);
+                             model_tex.mime_type.empty() ? "unknown"
+                                                         : model_tex.mime_type);
             }
         }
-        
+
         loaded_textures.push_back(tex);
     }
 
     // Fallback: try to find texture by name if no textures were loaded
     texture_handle primary_tex = invalid_texture;
-    if (loaded_textures.empty() || 
+    if (loaded_textures.empty() ||
         (loaded_textures.size() == 1 && loaded_textures[0] == invalid_texture))
     {
         if (!data.texture_path.empty())
@@ -1446,30 +1449,32 @@ model_handle Renderer::load_model(const std::filesystem::path& path,
     model.textures  = loaded_textures; // Store all textures
 
     // Assign textures to meshes based on materials
-    for (std::size_t i = 0; i < model.meshes.size() && i < data.meshes.size(); ++i)
+    for (std::size_t i = 0; i < model.meshes.size() && i < data.meshes.size();
+         ++i)
     {
         const auto& src_mesh = data.meshes[i];
-        auto& gpu_mesh = model.meshes[i];
-        
+        auto&       gpu_mesh = model.meshes[i];
+
         // Get texture from material
         texture_handle mesh_tex = invalid_texture;
         if (src_mesh.material_index < data.materials.size())
         {
             const auto& material = data.materials[src_mesh.material_index];
-            
+
             // Try base color texture first
             if (material.base_color_texture_index < loaded_textures.size())
             {
                 mesh_tex = loaded_textures[material.base_color_texture_index];
             }
         }
-        
+
         // Fallback to primary texture or default
         if (mesh_tex == invalid_texture)
         {
-            mesh_tex = (primary_tex != invalid_texture) ? primary_tex : default_texture_;
+            mesh_tex = (primary_tex != invalid_texture) ? primary_tex
+                                                        : default_texture_;
         }
-        
+
         gpu_mesh.texture = mesh_tex;
     }
 
@@ -1519,10 +1524,11 @@ void Renderer::unload_model(model_handle h)
             }
         }
         // Also unload legacy primary texture if different
-        if (it->second.texture != invalid_texture && 
+        if (it->second.texture != invalid_texture &&
             it->second.texture != default_texture_ &&
-            std::find(it->second.textures.begin(), it->second.textures.end(), 
-                     it->second.texture) == it->second.textures.end())
+            std::find(it->second.textures.begin(),
+                      it->second.textures.end(),
+                      it->second.texture) == it->second.textures.end())
         {
             unload_texture(it->second.texture);
         }
@@ -1580,13 +1586,12 @@ void Renderer::draw_model(model_handle h, const transform& xform)
     const auto& model = it->second;
 
     // Build model matrix: translate -> rotate (YXZ order) -> scale
-    // Note: Removed hardcoded 180-degree rotation fix - glTF scenes should be correctly oriented
+    // Note: Removed hardcoded 180-degree rotation fix - glTF scenes should be
+    // correctly oriented
     auto model_mat = glm::mat4(1.0f);
     model_mat      = glm::translate(model_mat, xform.position);
-    model_mat =
-        glm::rotate(model_mat,
-                    glm::radians(xform.rotation.y),
-                    glm::vec3(0, 1, 0));
+    model_mat      = glm::rotate(
+        model_mat, glm::radians(xform.rotation.y), glm::vec3(0, 1, 0));
     model_mat = glm::rotate(
         model_mat, glm::radians(xform.rotation.x), glm::vec3(1, 0, 0));
     model_mat = glm::rotate(
@@ -1608,9 +1613,11 @@ void Renderer::draw_model(model_handle h, const transform& xform)
     // Draw each mesh with its own texture
     for (const auto& mesh : model.meshes)
     {
-        const auto tex = (mesh.texture != invalid_texture) 
-            ? mesh.texture 
-            : ((model.texture != invalid_texture) ? model.texture : default_texture_);
+        const auto tex =
+            (mesh.texture != invalid_texture)
+                ? mesh.texture
+                : ((model.texture != invalid_texture) ? model.texture
+                                                      : default_texture_);
         draw_textured_mesh_internal(mesh, tex);
     }
 }
@@ -1634,21 +1641,22 @@ void Renderer::draw_bounds(const bounds&    b,
     }
 
     // Build corners of the AABB in local space
-    // Slightly expand the bounds to ensure wireframe is visible outside the model
-    const float expand = 0.01f; // Small expansion factor (1% larger)
-    const glm::vec3 center = (b.min + b.max) * 0.5f;
-    const glm::vec3 extents = (b.max - b.min) * 0.5f * (1.0f + expand);
+    // Slightly expand the bounds to ensure wireframe is visible outside the
+    // model
+    const float     expand       = 0.01f; // Small expansion factor (1% larger)
+    const glm::vec3 center       = (b.min + b.max) * 0.5f;
+    const glm::vec3 extents      = (b.max - b.min) * 0.5f * (1.0f + expand);
     const glm::vec3 expanded_min = center - extents;
     const glm::vec3 expanded_max = center + extents;
-    
+
     const glm::vec3 corners[8] = {
-        { expanded_min.x, expanded_min.y, expanded_min.z }, 
+        { expanded_min.x, expanded_min.y, expanded_min.z },
         { expanded_max.x, expanded_min.y, expanded_min.z },
-        { expanded_max.x, expanded_max.y, expanded_min.z }, 
+        { expanded_max.x, expanded_max.y, expanded_min.z },
         { expanded_min.x, expanded_max.y, expanded_min.z },
-        { expanded_min.x, expanded_min.y, expanded_max.z }, 
+        { expanded_min.x, expanded_min.y, expanded_max.z },
         { expanded_max.x, expanded_min.y, expanded_max.z },
-        { expanded_max.x, expanded_max.y, expanded_max.z }, 
+        { expanded_max.x, expanded_max.y, expanded_max.z },
         { expanded_min.x, expanded_max.y, expanded_max.z },
     };
 
@@ -1683,22 +1691,26 @@ void Renderer::draw_bounds(const bounds&    b,
         upload_wireframe_mesh(verts, std::span<const uint16_t>(edges, 24));
 
     // Bind bounds wireframe pipeline (depth test disabled)
-    // This ensures the wireframe is always visible, even when camera is inside the object
+    // This ensures the wireframe is always visible, even when camera is inside
+    // the object
     if (wireframe_bounds_pipeline_ != nullptr)
     {
         SDL_BindGPUGraphicsPipeline(current_pass_, wireframe_bounds_pipeline_);
     }
     else if (wireframe_pipeline_ != nullptr)
     {
-        // Fallback to regular wireframe pipeline if bounds pipeline not available
+        // Fallback to regular wireframe pipeline if bounds pipeline not
+        // available
         SDL_BindGPUGraphicsPipeline(current_pass_, wireframe_pipeline_);
     }
 
-    // Use MVP matrix with model transform (vertices are in local space, need model transform)
+    // Use MVP matrix with model transform (vertices are in local space, need
+    // model transform)
     const uniform_mvp uniforms { view_proj_ * model_mat };
     SDL_PushGPUVertexUniformData(current_cmd_, 0, &uniforms, sizeof(uniforms));
 
-    // Draw the mesh directly (don't use draw_mesh_internal as it would overwrite our MVP)
+    // Draw the mesh directly (don't use draw_mesh_internal as it would
+    // overwrite our MVP)
     if ((current_pass_ == nullptr) || (current_cmd_ == nullptr))
     {
         return;
