@@ -163,6 +163,9 @@ GAME_API bool game_init(euengine::engine_context* ctx)
         ctx->profiler->set_thread_name("Main");
         spdlog::info("Profiler enabled");
 
+        // Set profiler on engine (which will also set it on renderer)
+        ctx->settings->set_profiler(ctx->profiler);
+
         // Profile this function using the interface
         PROFILER_ZONE(ctx->profiler, "game_init");
     }

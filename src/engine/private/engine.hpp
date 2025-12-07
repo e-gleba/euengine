@@ -96,7 +96,7 @@ public:
 
     /// Set the profiler instance (called by game module)
     /// The profiler is optional and can be nullptr
-    void set_profiler(i_profiler* profiler) noexcept;
+    void set_profiler(i_profiler* profiler) noexcept override;
 
     // Direct accessors (for engine internal use)
     [[nodiscard]] entt::registry& registry() noexcept { return registry_; }
@@ -213,6 +213,19 @@ public:
         return render_distance_;
     }
 
+    // Profiler settings
+    void set_profiler_frame_marks_enabled(bool enabled) noexcept override;
+    [[nodiscard]] bool is_profiler_frame_marks_enabled() const noexcept override
+    {
+        return profiler_frame_marks_enabled_;
+    }
+    void set_profiler_frame_images_enabled(bool enabled) noexcept override;
+    [[nodiscard]] bool is_profiler_frame_images_enabled()
+        const noexcept override
+    {
+        return profiler_frame_images_enabled_;
+    }
+
     /// Check if post-processing is available
     [[nodiscard]] bool is_postprocess_available() const noexcept;
 
@@ -224,6 +237,9 @@ private:
     void update_context() noexcept;
     void cleanup_game_pointers() noexcept;
     void apply_vsync_mode() noexcept;
+    void capture_frame_image(SDL_GPUTexture* texture,
+                             Uint32          width,
+                             Uint32          height) noexcept;
 
     // ECS registry shared with game
     entt::registry registry_;
@@ -284,6 +300,11 @@ private:
     float          saturation_             = 1.0f;
     float          vignette_               = 0.0f;
     float          render_distance_        = 200.0f;
+
+    // Profiler settings
+    bool profiler_frame_marks_enabled_ = true; // Default: enabled
+    bool profiler_frame_images_enabled_ =
+        false; // Default: disabled (expensive, can cause hangs)
 
     // Audio
     float master_volume_     = 1.0f;

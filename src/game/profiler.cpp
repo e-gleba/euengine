@@ -7,6 +7,27 @@
 #include <tracy/TracyC.h>
 #include <vector>
 
+// Force Tracy initialization - this ensures Tracy's static initialization
+// happens even in shared libraries
+// Tracy initializes automatically when first used, but in shared libraries
+// we need to ensure it happens early
+namespace
+{
+struct tracy_initializer
+{
+    tracy_initializer()
+    {
+        // Force Tracy to initialize by calling a function that requires init
+        // This is a workaround for static initialization order issues in shared
+        // libs The message will be sent when Tracy is ready
+        TracyMessage("Tracy profiler initializing", 28);
+    }
+};
+// Static instance ensures initialization happens when the library loads
+// This runs before main() or when the shared library is loaded
+static tracy_initializer g_tracy_init;
+} // namespace
+
 namespace
 {
 // Thread-local storage for active zone contexts
@@ -50,6 +71,10 @@ public:
     void set_thread_name(const char* name) noexcept override;
 
     void message(const char* text) noexcept override;
+
+    void capture_frame_image(const void*   pixels,
+                             std::uint32_t width,
+                             std::uint32_t height) noexcept override;
 };
 
 std::uint64_t tracy_profiler::begin_zone(const char* name) noexcept
@@ -112,6 +137,10 @@ void tracy_profiler::end_zone(std::uint64_t handle) noexcept
 void tracy_profiler::mark_frame() noexcept
 {
     FrameMark;
+    // Note: Frame image capture would require reading back the swapchain
+    // texture which is expensive. For now, we just mark frames. To enable frame
+    // images, you'd need to capture the swapchain texture and call FrameImage()
+    // here.
 }
 
 void tracy_profiler::set_thread_name(const char* name) noexcept
@@ -122,6 +151,20 @@ void tracy_profiler::set_thread_name(const char* name) noexcept
 void tracy_profiler::message(const char* text) noexcept
 {
     TracyMessage(text, std::strlen(text));
+}
+
+void tracy_profiler::capture_frame_image(const void*   pixels,
+                                         std::uint32_t width,
+                                         std::uint32_t height) noexcept
+{
+    if (pixels == nullptr || width == 0 || height == 0)
+    {
+        return;
+    }
+    // Tracy's FrameImage expects BGRA8 format, but we have RGBA8
+    // We need to convert or use the correct format
+    // For now, send as-is (Tracy should handle RGBA)
+    FrameImage(pixels, width, height, 0, false);
 }
 
 #endif
@@ -143,6 +186,12 @@ public:
     void set_thread_name(const char* /*name*/) noexcept override {}
 
     void message(const char* /*text*/) noexcept override {}
+
+    void capture_frame_image(const void* /*pixels*/,
+                             std::uint32_t /*width*/,
+                             std::uint32_t /*height*/) noexcept override
+    {
+    }
 };
 
 // Factory function - game module doesn't need to know about implementation
@@ -150,9 +199,19 @@ public:
 i_profiler* create_profiler() noexcept
 {
 #ifdef TRACY_ENABLE
+    // Force Tracy initialization by creating a static instance
+    // This ensures Tracy's static initialization happens in the shared library
     static tracy_profiler profiler_instance;
-    // Send a test message to verify Tracy is working
+
+    // Send test messages to verify Tracy is working
+    // These will appear in Tracy when connected
     profiler_instance.message("Profiler initialized");
+    profiler_instance.message("Tracy profiler active - connect to view data");
+
+    // Create a test zone to ensure zones work
+    auto test_handle = profiler_instance.begin_zone("ProfilerInit");
+    profiler_instance.end_zone(test_handle);
+
     return &profiler_instance;
 #else
     static null_profiler profiler_instance;

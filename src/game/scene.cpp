@@ -288,7 +288,13 @@ void render(euengine::engine_context* ctx)
     }
     // Draw grid first
     for (auto h : g_grids)
+    {
+        if (ctx->profiler != nullptr)
+        {
+            PROFILER_ZONE(ctx->profiler, "scene::render::draw_grid");
+        }
         ctx->renderer->draw(h);
+    }
 
     // Draw origin axis gizmo after grid so it appears on top
     if (g_show_origin && g_origin_axis != euengine::invalid_mesh)
@@ -297,6 +303,10 @@ void render(euengine::engine_context* ctx)
     // Draw all models first
     for (auto& m : g_models)
     {
+        if (ctx->profiler != nullptr)
+        {
+            PROFILER_ZONE(ctx->profiler, "scene::render::draw_model");
+        }
         ctx->renderer->draw_model(m.handle, m.transform);
     }
 

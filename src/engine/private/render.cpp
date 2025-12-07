@@ -2,6 +2,8 @@
 #include "shader.hpp"
 #include "texture.hpp"
 
+#include <core-api/profiler.hpp>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <spdlog/spdlog.h>
 
@@ -1210,6 +1212,8 @@ void Renderer::draw_mesh_internal(const gpu_mesh& m)
 
 void Renderer::draw(mesh_handle h)
 {
+    PROFILER_ZONE(profiler_, "Renderer::draw");
+
     if (auto it = meshes_.find(h); it != meshes_.end())
     {
         if (current_pass_ != nullptr)
@@ -1527,6 +1531,8 @@ void Renderer::unload_model(model_handle h)
 void Renderer::draw_textured_mesh_internal(const gpu_textured_mesh& m,
                                            texture_handle           tex_handle)
 {
+    PROFILER_ZONE(profiler_, "Renderer::draw_textured_mesh");
+
     if ((current_pass_ == nullptr) || (current_cmd_ == nullptr))
     {
         return;
@@ -1563,8 +1569,15 @@ void Renderer::draw_textured_mesh_internal(const gpu_textured_mesh& m,
     frame_stats_.vertices += m.vertex_count;
 }
 
+void Renderer::set_profiler(i_profiler* profiler) noexcept
+{
+    profiler_ = profiler;
+}
+
 void Renderer::draw_model(model_handle h, const transform& xform)
 {
+    PROFILER_ZONE(profiler_, "Renderer::draw_model");
+
     auto it = models_.find(h);
     if (it == models_.end())
     {
@@ -1601,6 +1614,7 @@ void Renderer::draw_model(model_handle h, const transform& xform)
     // Draw each mesh with its own texture
     for (const auto& mesh : model.meshes)
     {
+        PROFILER_ZONE(profiler_, "Renderer::draw_model::mesh");
         const auto tex =
             (mesh.texture != invalid_texture)
                 ? mesh.texture

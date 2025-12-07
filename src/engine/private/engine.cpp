@@ -921,30 +921,34 @@ void engine::render()
         (depth_target.texture != nullptr) ? &depth_target : nullptr;
     if (auto* pass = SDL_BeginGPURenderPass(cmd, &color_target, 1, depth_ptr))
     {
-        renderer_->begin_frame(cmd, pass);
-
-        // Set view projection from first camera
-        auto camera_view = registry_.view<camera_component>();
-        for (auto&& [entity, cam] : camera_view.each())
         {
-            renderer_->set_view_projection(
-                cam.projection(context_.display.aspect) * cam.view());
-            break;
-        }
+            PROFILER_ZONE(context_.profiler, "engine::render::scene");
+            renderer_->begin_frame(cmd, pass);
 
-        renderer_->bind_pipeline();
-        if (game_render_ != nullptr)
-        {
-            game_render_(&context_);
-        }
+            // Set view projection from first camera
+            auto camera_view = registry_.view<camera_component>();
+            for (auto&& [entity, cam] : camera_view.each())
+            {
+                renderer_->set_view_projection(
+                    cam.projection(context_.display.aspect) * cam.view());
+                break;
+            }
 
-        renderer_->end_frame();
+            renderer_->bind_pipeline();
+            if (game_render_ != nullptr)
+            {
+                game_render_(&context_);
+            }
+
+            renderer_->end_frame();
+        }
         SDL_EndGPURenderPass(pass);
     }
 
     // Apply post-processing if enabled
     if (use_postprocess && renderer_->pp_color_target() != nullptr)
     {
+        PROFILER_ZONE(context_.profiler, "engine::render::postprocess");
         Renderer::postprocess_params pp_params {};
         pp_params.gamma        = gamma_;
         pp_params.brightness   = brightness_;
@@ -959,14 +963,26 @@ void engine::render()
     }
 
     // Render ImGui
-    imgui_layer_->begin_frame();
-    if (game_ui_ != nullptr)
     {
-        game_ui_(&context_);
+        PROFILER_ZONE(context_.profiler, "engine::render::imgui");
+        imgui_layer_->begin_frame();
+        if (game_ui_ != nullptr)
+        {
+            game_ui_(&context_);
+        }
+        imgui_layer_->end_frame(cmd, swapchain);
     }
-    imgui_layer_->end_frame(cmd, swapchain);
 
     SDL_SubmitGPUCommandBuffer(cmd);
+
+    // Capture frame image for profiler (if enabled) - after submit, before next
+    // frame Note: This is expensive as it waits for GPU and reads back texture
+    if (context_.profiler != nullptr && profiler_frame_images_enabled_ &&
+        swapchain != nullptr)
+    {
+        capture_frame_image(swapchain, swapchain_w, swapchain_h);
+    }
+
     shader_manager_->check_for_updates();
 }
 
@@ -1002,8 +1018,8 @@ void engine::iterate()
     update();
     render();
 
-    // Mark frame end for profiler
-    if (context_.profiler != nullptr)
+    // Mark frame end for profiler (if enabled)
+    if (context_.profiler != nullptr && profiler_frame_marks_enabled_)
     {
         context_.profiler->mark_frame();
     }
@@ -1016,6 +1032,124 @@ void engine::iterate()
 void engine::set_profiler(i_profiler* profiler) noexcept
 {
     context_.profiler = profiler;
+    // Also set profiler on renderer for detailed zones
+    if (renderer_ != nullptr)
+    {
+        renderer_->set_profiler(profiler);
+    }
+}
+
+void engine::set_profiler_frame_marks_enabled(bool enabled) noexcept
+{
+    profiler_frame_marks_enabled_ = enabled;
+}
+
+void engine::set_profiler_frame_images_enabled(bool enabled) noexcept
+{
+    profiler_frame_images_enabled_ = enabled;
+}
+
+void engine::capture_frame_image(SDL_GPUTexture* texture,
+                                 Uint32          width,
+                                 Uint32          height) noexcept
+{
+    if (texture == nullptr || width == 0 || height == 0 ||
+        context_.profiler == nullptr)
+    {
+        return;
+    }
+
+    // Limit capture rate - capture approximately once per second
+    // This is much less frequent than frame rate to avoid blocking
+    static std::uint32_t frame_counter = 0;
+    ++frame_counter;
+    // Capture every 60 frames (roughly once per second at 60 FPS)
+    if (frame_counter % 60 != 0)
+    {
+        return;
+    }
+
+    // Limit resolution to reduce memory and transfer time
+    // Tracy doesn't need full resolution for frame previews
+    // Maintain aspect ratio when downscaling
+    const Uint32 max_dimension = 512;
+    Uint32       capture_w     = width;
+    Uint32       capture_h     = height;
+
+    if (width > max_dimension || height > max_dimension)
+    {
+        // Scale down maintaining aspect ratio
+        const float aspect =
+            static_cast<float>(width) / static_cast<float>(height);
+        if (width > height)
+        {
+            capture_w = max_dimension;
+            capture_h = static_cast<Uint32>(max_dimension / aspect);
+        }
+        else
+        {
+            capture_h = max_dimension;
+            capture_w = static_cast<Uint32>(max_dimension * aspect);
+        }
+        // Ensure dimensions are even (some GPUs prefer this)
+        capture_w = (capture_w / 2) * 2;
+        capture_h = (capture_h / 2) * 2;
+    }
+
+    // Create a download transfer buffer
+    const Uint32 pixel_count = capture_w * capture_h;
+    const Uint32 buffer_size = pixel_count * 4; // RGBA8
+
+    SDL_GPUTransferBufferCreateInfo tb_info {};
+    tb_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_DOWNLOAD;
+    tb_info.size  = buffer_size;
+    auto* tb      = SDL_CreateGPUTransferBuffer(device_.get(), &tb_info);
+    if (tb == nullptr)
+    {
+        return;
+    }
+
+    // Create a command buffer for the download
+    auto* cmd = SDL_AcquireGPUCommandBuffer(device_.get());
+    if (cmd == nullptr)
+    {
+        SDL_ReleaseGPUTransferBuffer(device_.get(), tb);
+        return;
+    }
+
+    // Copy texture to transfer buffer (only the region we need)
+    auto* cp = SDL_BeginGPUCopyPass(cmd);
+    if (cp != nullptr)
+    {
+        SDL_GPUTextureRegion src {};
+        src.texture = texture;
+        src.w       = capture_w;
+        src.h       = capture_h;
+        src.d       = 1;
+
+        SDL_GPUTextureTransferInfo dst {};
+        dst.transfer_buffer = tb;
+        dst.offset          = 0;
+
+        SDL_DownloadFromGPUTexture(cp, &src, &dst);
+        SDL_EndGPUCopyPass(cp);
+    }
+
+    SDL_SubmitGPUCommandBuffer(cmd);
+
+    // Wait for GPU - this is blocking but we limit the rate
+    // TODO: Make this asynchronous in the future
+    SDL_WaitForGPUIdle(device_.get());
+
+    // Map the transfer buffer and send to profiler
+    auto* pixels = SDL_MapGPUTransferBuffer(device_.get(), tb, true);
+    if (pixels != nullptr)
+    {
+        context_.profiler->capture_frame_image(pixels, capture_w, capture_h);
+        SDL_UnmapGPUTransferBuffer(device_.get(), tb);
+    }
+
+    SDL_ReleaseGPUTransferBuffer(device_.get(), tb);
 }
 
 } // namespace euengine

@@ -1202,6 +1202,26 @@ void draw_engine(euengine::engine_context* ctx)
         ImGui::PopStyleColor();
         ImGui::Spacing();
 
+        // Profiler Frame Marks
+        bool frame_marks = ctx->settings->is_profiler_frame_marks_enabled();
+        if (ImGui::Checkbox("Profiler Frame Marks", &frame_marks))
+            ctx->settings->set_profiler_frame_marks_enabled(frame_marks);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(
+                "Enable frame marks in Tracy profiler for frame visualization");
+
+        // Profiler Frame Images
+        bool frame_images = ctx->settings->is_profiler_frame_images_enabled();
+        if (ImGui::Checkbox("Profiler Frame Images", &frame_images))
+            ctx->settings->set_profiler_frame_images_enabled(frame_images);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip(
+                "Enable frame screenshots in Tracy (WARNING: Very expensive - "
+                "blocks GPU. Captures ~once per second at max 512px "
+                "maintaining aspect ratio)");
+
+        ImGui::Spacing();
+
         float render_dist = ctx->settings->get_render_distance();
         if (ImGui::SliderFloat(
                 "##render_dist", &render_dist, 10.0f, 10000.0f, "%.0f units"))

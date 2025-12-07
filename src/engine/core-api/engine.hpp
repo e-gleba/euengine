@@ -8,6 +8,9 @@
 namespace euengine
 {
 
+// Forward declaration
+class i_profiler;
+
 class i_engine_settings
 {
 public:
@@ -97,6 +100,21 @@ public:
 
     /// Reload the game module (hot-reload)
     [[nodiscard]] virtual bool reload_game() noexcept = 0;
+
+    /// Set profiler instance (called by game module)
+    virtual void set_profiler(class i_profiler* profiler) noexcept = 0;
+
+    /// Enable/disable frame marks in profiler (for Tracy frame visualization)
+    virtual void set_profiler_frame_marks_enabled(bool enabled) noexcept = 0;
+    [[nodiscard]] virtual bool is_profiler_frame_marks_enabled()
+        const noexcept = 0;
+
+    /// Enable/disable frame image capture (for Tracy frame screenshots on
+    /// hover) Note: This is expensive as it requires reading back GPU texture
+    /// data
+    virtual void set_profiler_frame_images_enabled(bool enabled) noexcept = 0;
+    [[nodiscard]] virtual bool is_profiler_frame_images_enabled()
+        const noexcept = 0;
 };
 
 } // namespace euengine

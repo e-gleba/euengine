@@ -3,6 +3,7 @@
 /// @file render.hpp
 /// @brief GPU renderer with mesh and model management
 
+#include "core-api/profiler.hpp"
 #include "core-api/renderer.hpp"
 #include <model_loader_registry.hpp>
 
@@ -229,6 +230,9 @@ public:
     /// Rebuild pipelines if shaders changed
     void reload_pipelines();
 
+    /// Set profiler for detailed profiling zones
+    void set_profiler(i_profiler* profiler) noexcept;
+
     /// Check if wireframe pipeline is valid
     [[nodiscard]] bool pipeline_valid() const noexcept
     {
@@ -321,6 +325,9 @@ private:
 
     // Per-frame statistics
     mutable render_stats frame_stats_ {};
+
+    // Profiler for detailed zones
+    i_profiler* profiler_ = nullptr;
 };
 
 } // namespace euengine

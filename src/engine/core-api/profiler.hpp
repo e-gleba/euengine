@@ -34,6 +34,15 @@ public:
     /// Allocate a message/event (for profilers that support it)
     /// Thread-safe
     virtual void message(const char* text) noexcept = 0;
+
+    /// Capture frame image from GPU texture (for frame visualization)
+    /// @param pixels RGBA8 pixel data (width * height * 4 bytes)
+    /// @param width Image width in pixels
+    /// @param height Image height in pixels
+    /// Thread-safe
+    virtual void capture_frame_image(const void*   pixels,
+                                     std::uint32_t width,
+                                     std::uint32_t height) noexcept = 0;
 };
 
 /// RAII helper for profiling zones
