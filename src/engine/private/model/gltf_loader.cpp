@@ -77,7 +77,7 @@ compute_world_transforms(const fastgltf::Asset& asset)
     std::stack<std::pair<std::size_t, glm::mat4>> stack;
     for (std::size_t root : roots)
     {
-        stack.push({ root, glm::mat4 { 1.0f } });
+        stack.emplace( root, glm::mat4 { 1.0f } );
     }
 
     while (!stack.empty())
@@ -97,7 +97,7 @@ compute_world_transforms(const fastgltf::Asset& asset)
 
         for (std::size_t child : node.children)
         {
-            stack.push({ child, world });
+            stack.emplace( child, world );
         }
     }
 
@@ -112,7 +112,7 @@ void process_primitive(const fastgltf::Asset&     asset,
                        aabb&                      bounds)
 {
     // Find position attribute (required)
-    auto pos_it = primitive.findAttribute("POSITION");
+    const auto *pos_it = primitive.findAttribute("POSITION");
     if (pos_it == primitive.attributes.end())
     {
         return;
@@ -146,7 +146,7 @@ void process_primitive(const fastgltf::Asset&     asset,
         });
 
     // Load normals
-    if (auto norm_it = primitive.findAttribute("NORMAL");
+    if (const auto *norm_it = primitive.findAttribute("NORMAL");
         norm_it != primitive.attributes.end())
     {
         const auto& norm_accessor = asset.accessors[norm_it->accessorIndex];
@@ -164,7 +164,7 @@ void process_primitive(const fastgltf::Asset&     asset,
     // GLTF uses V=0 at top (DirectX convention), but OpenGL/Vulkan expect V=0
     // at bottom Since textures are flipped vertically when loaded, we need to
     // flip V coordinate here
-    if (auto uv_it = primitive.findAttribute("TEXCOORD_0");
+    if (const auto *uv_it = primitive.findAttribute("TEXCOORD_0");
         uv_it != primitive.attributes.end())
     {
         const auto& uv_accessor = asset.accessors[uv_it->accessorIndex];
@@ -179,7 +179,7 @@ void process_primitive(const fastgltf::Asset&     asset,
     }
 
     // Load joints (for skinning)
-    if (auto joints_it = primitive.findAttribute("JOINTS_0");
+    if (const auto *joints_it = primitive.findAttribute("JOINTS_0");
         joints_it != primitive.attributes.end())
     {
         const auto& joints_accessor = asset.accessors[joints_it->accessorIndex];
@@ -194,7 +194,7 @@ void process_primitive(const fastgltf::Asset&     asset,
     }
 
     // Load weights (for skinning)
-    if (auto weights_it = primitive.findAttribute("WEIGHTS_0");
+    if (const auto *weights_it = primitive.findAttribute("WEIGHTS_0");
         weights_it != primitive.attributes.end())
     {
         const auto& weights_accessor =
@@ -251,7 +251,7 @@ void extract_morph_targets(const fastgltf::Asset&     asset,
         morph_target morph;
 
         // Extract position deltas
-        if (auto pos_it = std::ranges::find_if(
+        if (const auto *pos_it = std::ranges::find_if(
                 target,
                 [](const auto& attr) { return attr.name == "POSITION"; });
             pos_it != target.end())
@@ -271,7 +271,7 @@ void extract_morph_targets(const fastgltf::Asset&     asset,
         }
 
         // Extract normal deltas
-        if (auto norm_it = std::ranges::find_if(
+        if (const auto *norm_it = std::ranges::find_if(
                 target, [](const auto& attr) { return attr.name == "NORMAL"; });
             norm_it != target.end())
         {
@@ -318,7 +318,7 @@ void extract_morph_targets(const fastgltf::Asset&     asset,
         std::string uri_str(uri.uri.path().begin(), uri.uri.path().end());
 
         // Data URI (embedded base64)
-        if (uri_str.find("data:") == 0)
+        if (uri_str.starts_with("data:"))
         {
             // Extract MIME type and data
             auto comma_pos = uri_str.find(',');
@@ -681,8 +681,9 @@ void extract_textures_and_materials(const fastgltf::Asset&       asset,
             for (const auto& entry :
                  std::filesystem::directory_iterator(base_path.parent_path()))
             {
-                if (!entry.is_regular_file())
+                if (!entry.is_regular_file()) {
                     continue;
+}
                 auto ext = entry.path().extension().string();
                 std::ranges::transform(ext, ext.begin(), ::tolower);
                 if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" ||
@@ -773,7 +774,7 @@ void extract_animations(const fastgltf::Asset&        asset,
                         asset,
                         output_accessor,
                         [&](glm::vec3 value)
-                        { sampler.output.push_back(glm::vec4(value, 0.0f)); });
+                        { sampler.output.emplace_back(value, 0.0f); });
                 }
                 else if (output_accessor.type == fastgltf::AccessorType::Vec4)
                 {

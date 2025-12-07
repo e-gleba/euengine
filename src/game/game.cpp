@@ -19,7 +19,7 @@ std::string sanitize_utf8(const std::string& str)
 
     for (std::size_t i = 0; i < str.size(); ++i)
     {
-        unsigned char c = static_cast<unsigned char>(str[i]);
+        auto c = static_cast<unsigned char>(str[i]);
 
         // Valid ASCII
         if (c < 0x80)
@@ -30,7 +30,7 @@ std::string sanitize_utf8(const std::string& str)
         else if ((c & 0xE0) == 0xC0 && i + 1 < str.size())
         {
             // 2-byte sequence
-            unsigned char c2 = static_cast<unsigned char>(str[i + 1]);
+            auto c2 = static_cast<unsigned char>(str[i + 1]);
             if ((c2 & 0xC0) == 0x80)
             {
                 result += static_cast<char>(c);
@@ -45,8 +45,8 @@ std::string sanitize_utf8(const std::string& str)
         else if ((c & 0xF0) == 0xE0 && i + 2 < str.size())
         {
             // 3-byte sequence
-            unsigned char c2 = static_cast<unsigned char>(str[i + 1]);
-            unsigned char c3 = static_cast<unsigned char>(str[i + 2]);
+            auto c2 = static_cast<unsigned char>(str[i + 1]);
+            auto c3 = static_cast<unsigned char>(str[i + 2]);
             if ((c2 & 0xC0) == 0x80 && (c3 & 0xC0) == 0x80)
             {
                 result += static_cast<char>(c);
@@ -62,9 +62,9 @@ std::string sanitize_utf8(const std::string& str)
         else if ((c & 0xF8) == 0xF0 && i + 3 < str.size())
         {
             // 4-byte sequence
-            unsigned char c2 = static_cast<unsigned char>(str[i + 1]);
-            unsigned char c3 = static_cast<unsigned char>(str[i + 2]);
-            unsigned char c4 = static_cast<unsigned char>(str[i + 3]);
+            auto c2 = static_cast<unsigned char>(str[i + 1]);
+            auto c3 = static_cast<unsigned char>(str[i + 2]);
+            auto c4 = static_cast<unsigned char>(str[i + 3]);
             if ((c2 & 0xC0) == 0x80 && (c3 & 0xC0) == 0x80 &&
                 (c4 & 0xC0) == 0x80)
             {
@@ -139,7 +139,7 @@ GAME_API euengine::preinit_result game_preinit(euengine::preinit_settings* s)
     s->audio.master_volume = 0.8f;
     s->audio.music_volume  = 0.5f;
 
-    s->background = { 0.12f, 0.14f, 0.18f, 1.0f };
+    s->background = { .r=0.12f, .g=0.14f, .b=0.18f, .a=1.0f };
 
     return euengine::preinit_result::ok;
 }
@@ -179,8 +179,9 @@ GAME_API void game_update(euengine::engine_context* ctx)
     scene::update(ctx);
 
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
-    if (!ImGui::GetIO().WantCaptureMouse && ImGui::GetIO().MouseClicked[0])
+    if (!ImGui::GetIO().WantCaptureMouse && ImGui::GetIO().MouseClicked[0]) {
         ctx->settings->set_mouse_captured(true);
+}
 }
 
 GAME_API void game_render(euengine::engine_context* ctx)

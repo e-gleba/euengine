@@ -400,8 +400,9 @@ void engine::set_frames_in_flight(std::uint32_t frames) noexcept
 
 bool engine::is_msaa_supported(msaa_samples samples) const noexcept
 {
-    if (!device_)
+    if (!device_) {
         return false;
+}
 
     SDL_GPUSampleCount count = SDL_GPU_SAMPLECOUNT_1;
     switch (samples)
@@ -452,7 +453,7 @@ void engine::set_texture_filter(texture_filter filter) noexcept
     // Texture filter will be applied when creating/updating samplers
     if (renderer_)
     {
-        i_renderer::texture_filter rf =
+        auto rf =
             static_cast<i_renderer::texture_filter>(static_cast<int>(filter));
         renderer_->set_texture_filter(rf);
     }
