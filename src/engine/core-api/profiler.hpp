@@ -138,17 +138,25 @@ private:
     std::uint64_t event_handle_ = 0; // Handle for event system
 };
 
-/// Macro helper for creating zones (similar to Tracy's ZoneScoped)
-/// Usage: PROFILER_ZONE(profiler, "MyZoneName");
-/// This macro works with both the old i_profiler interface and the new event
+/// Helper function for creating zones (similar to Tracy's ZoneScoped)
+/// Usage: auto zone = profiler_zone_begin(profiler, "MyZoneName");
+/// This function works with both the old i_profiler interface and the new event
 /// system
-#define PROFILER_ZONE(profiler, name)                                          \
-    ::euengine::profiler_zone _profiler_zone(profiler, name)
+/// The returned profiler_zone will automatically end when it goes out of scope
+[[nodiscard]] inline profiler_zone profiler_zone_begin(
+    i_profiler* profiler, const char* name) noexcept
+{
+    return profiler_zone(profiler, name);
+}
 
-/// Macro helper for creating zones using only the event system
-/// Usage: PROFILER_ZONE_EVENT("MyZoneName");
+/// Helper function for creating zones using only the event system
+/// Usage: auto zone = profiler_zone_begin_event("MyZoneName");
 /// This is the preferred way for new code - profilers subscribe via callbacks
-#define PROFILER_ZONE_EVENT(name)                                              \
-    ::euengine::profiler_zone _profiler_zone_event(nullptr, name)
+/// The returned profiler_zone will automatically end when it goes out of scope
+[[nodiscard]] inline profiler_zone profiler_zone_begin_event(
+    const char* name) noexcept
+{
+    return profiler_zone(nullptr, name);
+}
 
 } // namespace euengine

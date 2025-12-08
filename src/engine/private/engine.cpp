@@ -1067,7 +1067,8 @@ bool engine::process_event(const SDL_Event& event)
 
 void engine::update()
 {
-    PROFILER_ZONE(context_.profiler, "engine::update");
+    [[maybe_unused]] auto _profiler_zone =
+        profiler_zone_begin(context_.profiler, "engine::update");
 
     // Update camera components using ranges
     auto camera_view = registry_.view<camera_component>();
@@ -1119,7 +1120,8 @@ void engine::update()
 
 void engine::render()
 {
-    PROFILER_ZONE(context_.profiler, "engine::render");
+    [[maybe_unused]] auto _profiler_zone =
+        profiler_zone_begin(context_.profiler, "engine::render");
 
     // Apply deferred VSync change before acquiring swapchain
     if (vsync_dirty_)
@@ -1239,7 +1241,8 @@ void engine::render()
     if (auto* pass = SDL_BeginGPURenderPass(cmd, &color_target, 1, depth_ptr))
     {
         {
-            PROFILER_ZONE(context_.profiler, "engine::render::scene");
+            [[maybe_unused]] auto _profiler_zone_scene =
+                profiler_zone_begin(context_.profiler, "engine::render::scene");
             renderer_->begin_frame(cmd, pass);
 
             // Set view projection from first camera
@@ -1265,7 +1268,8 @@ void engine::render()
     // Apply post-processing if enabled
     if (use_postprocess && renderer_->pp_color_target() != nullptr)
     {
-        PROFILER_ZONE(context_.profiler, "engine::render::postprocess");
+        [[maybe_unused]] auto _profiler_zone_postprocess = profiler_zone_begin(
+            context_.profiler, "engine::render::postprocess");
         Renderer::postprocess_params pp_params {};
         pp_params.gamma        = gamma_;
         pp_params.brightness   = brightness_;
@@ -1281,7 +1285,8 @@ void engine::render()
 
     // Render ImGui
     {
-        PROFILER_ZONE(context_.profiler, "engine::render::imgui");
+        [[maybe_unused]] auto _profiler_zone_imgui =
+            profiler_zone_begin(context_.profiler, "engine::render::imgui");
         imgui_layer_->begin_frame();
         if (game_ui_ != nullptr)
         {
@@ -1304,7 +1309,8 @@ void engine::render()
 
 void engine::iterate()
 {
-    PROFILER_ZONE(context_.profiler, "engine::iterate");
+    [[maybe_unused]] auto _profiler_zone =
+        profiler_zone_begin(context_.profiler, "engine::iterate");
 
     const Uint64 freq = SDL_GetPerformanceFrequency();
     const Uint64 now  = SDL_GetPerformanceCounter();

@@ -241,10 +241,8 @@ void shutdown()
 
 void update(euengine::engine_context* ctx)
 {
-    if (ctx->profiler != nullptr)
-    {
-        PROFILER_ZONE(ctx->profiler, "scene::update");
-    }
+    [[maybe_unused]] auto _profiler_zone =
+        profiler_zone_begin(ctx->profiler, "scene::update");
 
     // Stats
     constexpr int history_size = 300;
@@ -282,17 +280,13 @@ void update(euengine::engine_context* ctx)
 
 void render(euengine::engine_context* ctx)
 {
-    if (ctx->profiler != nullptr)
-    {
-        PROFILER_ZONE(ctx->profiler, "scene::render");
-    }
+    [[maybe_unused]] auto _profiler_zone =
+        profiler_zone_begin(ctx->profiler, "scene::render");
     // Draw grid first
     for (auto h : g_grids)
     {
-        if (ctx->profiler != nullptr)
-        {
-            PROFILER_ZONE(ctx->profiler, "scene::render::draw_grid");
-        }
+        [[maybe_unused]] auto _profiler_zone_grid =
+            profiler_zone_begin(ctx->profiler, "scene::render::draw_grid");
         ctx->renderer->draw(h);
     }
 
@@ -303,10 +297,8 @@ void render(euengine::engine_context* ctx)
     // Draw all models first
     for (auto& m : g_models)
     {
-        if (ctx->profiler != nullptr)
-        {
-            PROFILER_ZONE(ctx->profiler, "scene::render::draw_model");
-        }
+        [[maybe_unused]] auto _profiler_zone_model =
+            profiler_zone_begin(ctx->profiler, "scene::render::draw_model");
         ctx->renderer->draw_model(m.handle, m.transform);
     }
 

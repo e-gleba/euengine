@@ -172,7 +172,8 @@ GAME_API bool game_init(euengine::engine_context* ctx)
 
         // Profile this function using the interface (emits events
         // automatically)
-        PROFILER_ZONE(ctx->profiler, "game_init");
+        [[maybe_unused]] auto _profiler_zone =
+            profiler_zone_begin(ctx->profiler, "game_init");
     }
 
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
@@ -199,10 +200,8 @@ GAME_API void game_shutdown()
 
 GAME_API void game_update(euengine::engine_context* ctx)
 {
-    if (ctx->profiler != nullptr)
-    {
-        PROFILER_ZONE(ctx->profiler, "game_update");
-    }
+    [[maybe_unused]] auto _profiler_zone =
+        profiler_zone_begin(ctx->profiler, "game_update");
 
     // Check for keyboard shortcuts
     // Check for Ctrl+O (Open file dialog) - using scan code indices
@@ -231,20 +230,16 @@ GAME_API void game_update(euengine::engine_context* ctx)
 
 GAME_API void game_render(euengine::engine_context* ctx)
 {
-    if (ctx->profiler != nullptr)
-    {
-        PROFILER_ZONE(ctx->profiler, "game_render");
-    }
+    [[maybe_unused]] auto _profiler_zone =
+        profiler_zone_begin(ctx->profiler, "game_render");
 
     scene::render(ctx);
 }
 
 GAME_API void game_ui(euengine::engine_context* ctx)
 {
-    if (ctx->profiler != nullptr)
-    {
-        PROFILER_ZONE(ctx->profiler, "game_ui");
-    }
+    [[maybe_unused]] auto _profiler_zone =
+        profiler_zone_begin(ctx->profiler, "game_ui");
 
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
     // Update time for console logging before drawing UI

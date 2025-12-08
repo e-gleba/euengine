@@ -1368,10 +1368,8 @@ void draw_engine(euengine::engine_context* ctx)
 
 void draw_stats(euengine::engine_context* ctx)
 {
-    if (ctx->profiler != nullptr)
-    {
-        PROFILER_ZONE(ctx->profiler, "UI::draw_stats");
-    }
+    [[maybe_unused]] auto _profiler_zone =
+        profiler_zone_begin(ctx->profiler, "UI::draw_stats");
 
     if (!g_show_stats)
         return;
