@@ -132,9 +132,9 @@ public:
 class i_shader_manager
 {
 public:
-    virtual ~i_shader_manager()                 = default;
-    virtual bool hot_reload_enabled() const     = 0;
-    virtual void enable_hot_reload(bool enable) = 0;
+    virtual ~i_shader_manager()                               = default;
+    [[nodiscard]] virtual bool hot_reload_enabled() const     = 0;
+    virtual void               enable_hot_reload(bool enable) = 0;
 };
 
 } // namespace euengine

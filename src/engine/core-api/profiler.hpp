@@ -3,7 +3,6 @@
 #include "profiling_events.hpp"
 
 #include <cstdint>
-#include <string_view>
 
 namespace euengine
 {
@@ -146,7 +145,7 @@ private:
 [[nodiscard]] inline profiler_zone profiler_zone_begin(
     i_profiler* profiler, const char* name) noexcept
 {
-    return profiler_zone(profiler, name);
+    return { profiler, name };
 }
 
 /// Helper function for creating zones using only the event system
@@ -156,7 +155,7 @@ private:
 [[nodiscard]] inline profiler_zone profiler_zone_begin_event(
     const char* name) noexcept
 {
-    return profiler_zone(nullptr, name);
+    return { nullptr, name };
 }
 
 } // namespace euengine

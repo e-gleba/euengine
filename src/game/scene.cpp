@@ -1,6 +1,7 @@
 #include "scene.hpp"
 #include "ui.hpp"
 
+#include <algorithm>
 #include <core-api/camera.hpp>
 #include <core-api/profiler.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -394,7 +395,7 @@ void scan_models()
             g_model_files.push_back(e.path().string());
         }
     }
-    std::sort(g_model_files.begin(), g_model_files.end());
+    std::ranges::sort(g_model_files);
     ui::log(2, "Models: " + std::to_string(g_model_files.size()));
 }
 
@@ -421,7 +422,7 @@ void scan_scenes()
             g_scene_files.push_back(e.path().string());
         }
     }
-    std::sort(g_scene_files.begin(), g_scene_files.end());
+    std::ranges::sort(g_scene_files);
     ui::log(2, "Scene files: " + std::to_string(g_scene_files.size()));
 }
 

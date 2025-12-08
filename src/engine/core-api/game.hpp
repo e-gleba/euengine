@@ -78,22 +78,22 @@ struct clear_color final
 
     [[nodiscard]] static constexpr clear_color dark() noexcept
     {
-        return { 0.08f, 0.08f, 0.12f, 1.0f };
+        return { .r = 0.08f, .g = 0.08f, .b = 0.12f, .a = 1.0f };
     }
 
     [[nodiscard]] static constexpr clear_color sky() noexcept
     {
-        return { 0.4f, 0.6f, 0.9f, 1.0f };
+        return { .r = 0.4f, .g = 0.6f, .b = 0.9f, .a = 1.0f };
     }
 
     [[nodiscard]] static constexpr clear_color sunset() noexcept
     {
-        return { 0.95f, 0.5f, 0.3f, 1.0f };
+        return { .r = 0.95f, .g = 0.5f, .b = 0.3f, .a = 1.0f };
     }
 
     [[nodiscard]] static constexpr clear_color night() noexcept
     {
-        return { 0.02f, 0.02f, 0.05f, 1.0f };
+        return { .r = 0.02f, .g = 0.02f, .b = 0.05f, .a = 1.0f };
     }
 };
 

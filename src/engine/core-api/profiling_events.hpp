@@ -19,32 +19,32 @@ enum class profiling_event_type : std::uint8_t
 };
 
 /// Zone begin event data
-struct profiling_zone_begin_event
+struct profiling_zone_begin_event final
 {
     const char*   zone_name;   ///< Name of the zone
     std::uint64_t zone_handle; ///< Unique handle for this zone instance
 };
 
 /// Zone end event data
-struct profiling_zone_end_event
+struct profiling_zone_end_event final
 {
     std::uint64_t zone_handle; ///< Handle of the zone ending
 };
 
 /// Thread name event data
-struct profiling_thread_name_event
+struct profiling_thread_name_event final
 {
     const char* thread_name; ///< Name of the thread
 };
 
 /// Message event data
-struct profiling_message_event
+struct profiling_message_event final
 {
     const char* text; ///< Message text
 };
 
 /// Frame image event data
-struct profiling_frame_image_event
+struct profiling_frame_image_event final
 {
     const void*   pixels; ///< RGBA8 pixel data
     std::uint32_t width;  ///< Image width
@@ -62,7 +62,7 @@ union profiling_event_data
 };
 
 /// Profiling event structure
-struct profiling_event
+struct profiling_event final
 {
     profiling_event_type type; ///< Type of event
     profiling_event_data data; ///< Event-specific data
@@ -76,7 +76,7 @@ using profiling_event_callback = void (*)(const profiling_event& event,
                                           void*                  userdata);
 
 /// Callback entry for internal storage
-struct profiling_callback_entry
+struct profiling_callback_entry final
 {
     profiling_event_callback callback = nullptr;
     void*                    userdata = nullptr;
@@ -136,13 +136,13 @@ public:
 
         std::lock_guard<std::mutex> lock(callbacks_mutex_);
 
-        for (std::size_t i = 0; i < k_max_callbacks; ++i)
+        for (auto& callback : callbacks_)
         {
-            if (callbacks_[i].id == callback_id)
+            if (callback.id == callback_id)
             {
-                callbacks_[i].callback = nullptr;
-                callbacks_[i].userdata = nullptr;
-                callbacks_[i].id       = 0;
+                callback.callback = nullptr;
+                callback.userdata = nullptr;
+                callback.id       = 0;
                 return;
             }
         }
