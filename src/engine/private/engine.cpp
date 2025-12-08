@@ -1067,7 +1067,7 @@ bool engine::process_event(const SDL_Event& event)
 
 void engine::update()
 {
-    [[maybe_unused]] auto _profiler_zone =
+    [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(context_.profiler, "engine::update");
 
     // Update camera components using ranges
@@ -1120,7 +1120,7 @@ void engine::update()
 
 void engine::render()
 {
-    [[maybe_unused]] auto _profiler_zone =
+    [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(context_.profiler, "engine::render");
 
     // Apply deferred VSync change before acquiring swapchain
@@ -1241,7 +1241,7 @@ void engine::render()
     if (auto* pass = SDL_BeginGPURenderPass(cmd, &color_target, 1, depth_ptr))
     {
         {
-            [[maybe_unused]] auto _profiler_zone_scene =
+            [[maybe_unused]] auto profiler_zone_scene =
                 profiler_zone_begin(context_.profiler, "engine::render::scene");
             renderer_->begin_frame(cmd, pass);
 
@@ -1268,7 +1268,7 @@ void engine::render()
     // Apply post-processing if enabled
     if (use_postprocess && renderer_->pp_color_target() != nullptr)
     {
-        [[maybe_unused]] auto _profiler_zone_postprocess = profiler_zone_begin(
+        [[maybe_unused]] auto profiler_zone_postprocess = profiler_zone_begin(
             context_.profiler, "engine::render::postprocess");
         Renderer::postprocess_params pp_params {};
         pp_params.gamma        = gamma_;
@@ -1285,7 +1285,7 @@ void engine::render()
 
     // Render ImGui
     {
-        [[maybe_unused]] auto _profiler_zone_imgui =
+        [[maybe_unused]] auto profiler_zone_imgui =
             profiler_zone_begin(context_.profiler, "engine::render::imgui");
         imgui_layer_->begin_frame();
         if (game_ui_ != nullptr)
@@ -1309,7 +1309,7 @@ void engine::render()
 
 void engine::iterate()
 {
-    [[maybe_unused]] auto _profiler_zone =
+    [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(context_.profiler, "engine::iterate");
 
     const Uint64 freq = SDL_GetPerformanceFrequency();
@@ -1328,8 +1328,8 @@ void engine::iterate()
         if (delta_time_ < target_frame_time)
         {
             // Sleep until we reach the target frame time
-            const float  sleep_time = target_frame_time - delta_time_;
-            const Uint64 sleep_ticks =
+            const float sleep_time = target_frame_time - delta_time_;
+            const auto  sleep_ticks =
                 static_cast<Uint64>(sleep_time * static_cast<float>(freq));
 
             if (sleep_ticks > 0)

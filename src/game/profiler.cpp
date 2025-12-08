@@ -28,7 +28,7 @@ struct tracy_initializer
 };
 // Static instance ensures initialization happens when the library loads
 // This runs before main() or when the shared library is loaded
-static tracy_initializer g_tracy_init;
+tracy_initializer g_tracy_init;
 } // namespace
 
 namespace
@@ -211,8 +211,7 @@ std::uint64_t tracy_profiler::begin_zone(const char* name) noexcept
     // Store in thread-local stack (zones are LIFO)
     // Handle is 1-based index (0 = invalid)
     g_active_zones.push_back(ctx);
-    const std::uint64_t handle =
-        static_cast<std::uint64_t>(g_active_zones.size());
+    const auto handle = static_cast<std::uint64_t>(g_active_zones.size());
 
     return handle;
 }
@@ -227,7 +226,7 @@ void tracy_profiler::end_zone(std::uint64_t handle) noexcept
     // For RAII zones (which is our primary use case), zones are LIFO
     // So the handle should match the top of the stack
     // But we support non-LIFO for flexibility - find and remove the zone
-    const size_t expected_idx = static_cast<size_t>(handle - 1);
+    const auto expected_idx = static_cast<size_t>(handle - 1);
 
     if (expected_idx < g_active_zones.size())
     {

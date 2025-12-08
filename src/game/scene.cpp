@@ -8,7 +8,9 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <numbers>
 #include <ranges>
+#include <utility>
 
 namespace scene
 {
@@ -41,20 +43,24 @@ void setup_scene()
 void process_input()
 {
     if (g_camera == entt::null || !g_ctx->registry->valid(g_camera))
+    {
         return;
+    }
 
     auto& cam = g_ctx->registry->get<euengine::camera_component>(g_camera);
 
     // Allow escape to release mouse even when not captured
-    if (g_ctx->input.keyboard && g_ctx->input.keyboard[key_escape] &&
-        g_ctx->input.mouse_captured)
+    if ((g_ctx->input.keyboard != nullptr) &&
+        g_ctx->input.keyboard[key_escape] && g_ctx->input.mouse_captured)
     {
         g_ctx->settings->set_mouse_captured(false);
     }
 
     // Only process camera input when mouse is captured (camera focused)
     if (!g_ctx->input.mouse_captured)
+    {
         return;
+    }
 
     // Mouse look
     cam.yaw += g_ctx->input.mouse_xrel * cam.look_speed;
@@ -62,46 +68,68 @@ void process_input()
     cam.pitch = glm::clamp(cam.pitch, -89.0f, 89.0f);
 
     if (g_ctx->input.keyboard == nullptr)
+    {
         return;
+    }
 
     float speed = cam.move_speed * g_ctx->time.delta;
     if (g_ctx->input.keyboard[key_lshift])
+    {
         speed *= 3.0f;
+    }
 
     glm::vec3 front = cam.front();
     glm::vec3 right = cam.right();
 
     if (g_ctx->input.keyboard[key_w])
+    {
         cam.position += front * speed;
+    }
     if (g_ctx->input.keyboard[key_s])
+    {
         cam.position -= front * speed;
+    }
     if (g_ctx->input.keyboard[key_a])
+    {
         cam.position -= right * speed;
+    }
     if (g_ctx->input.keyboard[key_d])
+    {
         cam.position += right * speed;
+    }
     if (g_ctx->input.keyboard[key_e])
+    {
         cam.position.y += speed;
+    }
     if (g_ctx->input.keyboard[key_q])
+    {
         cam.position.y -= speed;
+    }
 
     static bool keys[8] = {}; // Increased for F1
 
     if (g_ctx->input.keyboard[key_space] && !keys[0])
+    {
         ui::g_auto_rotate = !ui::g_auto_rotate;
+    }
     keys[0] = g_ctx->input.keyboard[key_space];
 
     if (g_ctx->input.keyboard[key_tab] && !keys[1])
+    {
         ui::g_wireframe = !ui::g_wireframe;
+    }
     keys[1] = g_ctx->input.keyboard[key_tab];
 
     if (g_ctx->input.keyboard[key_f11] && !keys[2])
+    {
         g_ctx->settings->set_fullscreen(!g_ctx->settings->is_fullscreen());
+    }
     keys[2] = g_ctx->input.keyboard[key_f11];
 
     if (g_ctx->input.keyboard[key_f5] && !keys[3])
     {
         ui::log(2, "Hot reload (F5)");
-        if (g_ctx->shaders)
+        if (g_ctx->shaders != nullptr)
         {
             g_ctx->shaders->enable_hot_reload(false);
             g_ctx->shaders->enable_hot_reload(true);
@@ -110,12 +138,16 @@ void process_input()
     keys[3] = g_ctx->input.keyboard[key_f5];
 
     if (g_ctx->input.keyboard[key_grave] && !keys[4])
+    {
         ui::g_show_console = !ui::g_show_console;
+    }
     keys[4] = g_ctx->input.keyboard[key_grave];
 
     constexpr int key_f1 = 58;
     if (g_ctx->input.keyboard[key_f1] && !keys[5])
+    {
         ui::g_show_shortcuts = !ui::g_show_shortcuts;
+    }
     keys[5] = g_ctx->input.keyboard[key_f1];
 
     g_ctx->renderer->set_view_projection(cam.projection(g_ctx->display.aspect) *
@@ -131,7 +163,9 @@ void animate(float t, float dt)
         {
             m.transform.rotation.y += m.anim_speed * dt;
             if (m.transform.rotation.y > 360.0f)
+            {
                 m.transform.rotation.y -= 360.0f;
+            }
         }
         if (m.hover)
         {
@@ -173,7 +207,9 @@ void init(euengine::engine_context* ctx)
     std::filesystem::path exe = std::filesystem::current_path();
     std::filesystem::path lib = exe / "libgame.so";
     if (!std::filesystem::exists(lib))
+    {
         lib = exe / "game.dll";
+    }
 
     if (std::filesystem::exists(lib))
     {
@@ -183,7 +219,9 @@ void init(euengine::engine_context* ctx)
 
     // Camera
     if (g_camera != entt::null && ctx->registry->valid(g_camera))
+    {
         ctx->registry->destroy(g_camera);
+    }
 
     g_camera     = ctx->registry->create();
     auto& cam    = ctx->registry->emplace<euengine::camera_component>(g_camera);
@@ -211,25 +249,39 @@ void init(euengine::engine_context* ctx)
 void shutdown()
 {
     for (auto& m : g_models)
-        if (m.handle != euengine::invalid_model && g_ctx->renderer)
+    {
+        if (m.handle != euengine::invalid_model && (g_ctx->renderer != nullptr))
+        {
             g_ctx->renderer->unload_model(m.handle);
+        }
+    }
     g_models.clear();
 
     for (auto& a : g_audio)
-        if (a.handle != euengine::invalid_music && g_ctx->audio)
+    {
+        if (a.handle != euengine::invalid_music && (g_ctx->audio != nullptr))
+        {
             g_ctx->audio->unload_music(a.handle);
+        }
+    }
     g_audio.clear();
 
     for (auto h : g_grids)
-        if (h != euengine::invalid_mesh && g_ctx->renderer)
+    {
+        if (h != euengine::invalid_mesh && (g_ctx->renderer != nullptr))
+        {
             g_ctx->renderer->destroy_mesh(h);
+        }
+    }
     g_grids.clear();
 
-    if (g_origin_axis != euengine::invalid_mesh && g_ctx->renderer)
+    if (g_origin_axis != euengine::invalid_mesh && (g_ctx->renderer != nullptr))
+    {
         g_ctx->renderer->destroy_mesh(g_origin_axis);
+    }
     g_origin_axis = euengine::invalid_mesh;
 
-    if (g_camera != entt::null && g_ctx->registry &&
+    if (g_camera != entt::null && (g_ctx->registry != nullptr) &&
         g_ctx->registry->valid(g_camera))
     {
         g_ctx->registry->destroy(g_camera);
@@ -241,7 +293,7 @@ void shutdown()
 
 void update(euengine::engine_context* ctx)
 {
-    [[maybe_unused]] auto _profiler_zone =
+    [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(ctx->profiler, "scene::update");
 
     // Stats
@@ -254,13 +306,13 @@ void update(euengine::engine_context* ctx)
     g_min_fps     = 999.0f;
     g_max_fps     = 0.0f;
     float fps_sum = 0.0f;
-    for (int i = 0; i < history_size; ++i)
+    for (float i : g_fps_history)
     {
-        if (g_fps_history[i] > 0.0f)
+        if (i > 0.0f)
         {
-            g_min_fps = std::min(g_min_fps, g_fps_history[i]);
-            g_max_fps = std::max(g_max_fps, g_fps_history[i]);
-            fps_sum += g_fps_history[i];
+            g_min_fps = std::min(g_min_fps, i);
+            g_max_fps = std::max(g_max_fps, i);
+            fps_sum += i;
         }
     }
     g_avg_fps = fps_sum / history_size;
@@ -280,24 +332,26 @@ void update(euengine::engine_context* ctx)
 
 void render(euengine::engine_context* ctx)
 {
-    [[maybe_unused]] auto _profiler_zone =
+    [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(ctx->profiler, "scene::render");
     // Draw grid first
     for (auto h : g_grids)
     {
-        [[maybe_unused]] auto _profiler_zone_grid =
+        [[maybe_unused]] auto profiler_zone_grid =
             profiler_zone_begin(ctx->profiler, "scene::render::draw_grid");
         ctx->renderer->draw(h);
     }
 
     // Draw origin axis gizmo after grid so it appears on top
     if (g_show_origin && g_origin_axis != euengine::invalid_mesh)
+    {
         ctx->renderer->draw(g_origin_axis);
+    }
 
     // Draw all models first
     for (auto& m : g_models)
     {
-        [[maybe_unused]] auto _profiler_zone_model =
+        [[maybe_unused]] auto profiler_zone_model =
             profiler_zone_begin(ctx->profiler, "scene::render::draw_model");
         ctx->renderer->draw_model(m.handle, m.transform);
     }
@@ -306,8 +360,8 @@ void render(euengine::engine_context* ctx)
     // This ensures bounds are always visible on top
     for (std::size_t i = 0; i < g_models.size(); ++i)
     {
-        if (g_selected_set.find(static_cast<int>(i)) != g_selected_set.end() ||
-            static_cast<int>(i) == g_selected)
+        if (g_selected_set.contains(static_cast<int>(i)) ||
+            std::cmp_equal(i, g_selected))
         {
             ctx->renderer->draw_bounds(g_models[i].bounds,
                                        g_models[i].transform,
@@ -323,16 +377,22 @@ void scan_models()
 
     const std::string dir = "assets/models";
     if (!std::filesystem::exists(dir))
+    {
         return;
+    }
 
     for (const auto& e : std::filesystem::recursive_directory_iterator(dir))
     {
         if (!e.is_regular_file())
+        {
             continue;
+        }
         auto ext = e.path().extension().string();
         if (ext == ".obj" || ext == ".glb" || ext == ".gltf" || ext == ".OBJ" ||
             ext == ".GLB" || ext == ".GLTF")
+        {
             g_model_files.push_back(e.path().string());
+        }
     }
     std::sort(g_model_files.begin(), g_model_files.end());
     ui::log(2, "Models: " + std::to_string(g_model_files.size()));
@@ -344,16 +404,22 @@ void scan_scenes()
 
     const std::string dir = "assets";
     if (!std::filesystem::exists(dir))
+    {
         return;
+    }
 
     for (const auto& e : std::filesystem::recursive_directory_iterator(dir))
     {
         if (!e.is_regular_file())
+        {
             continue;
+        }
         auto ext = e.path().extension().string();
         std::ranges::transform(ext, ext.begin(), ::tolower);
         if (ext == ".gltf" || ext == ".glb")
+        {
             g_scene_files.push_back(e.path().string());
+        }
     }
     std::sort(g_scene_files.begin(), g_scene_files.end());
     ui::log(2, "Scene files: " + std::to_string(g_scene_files.size()));
@@ -366,11 +432,15 @@ void scan_audio()
     auto scan_dir = [](const std::string& dir, bool sfx)
     {
         if (!std::filesystem::exists(dir))
+        {
             return;
+        }
         for (const auto& e : std::filesystem::directory_iterator(dir))
         {
             if (!e.is_regular_file())
+            {
                 continue;
+            }
             auto ext = e.path().extension().string();
             if (ext == ".ogg" || ext == ".mp3" || ext == ".wav" ||
                 ext == ".OGG" || ext == ".MP3" || ext == ".WAV")
@@ -391,7 +461,9 @@ void scan_audio()
                       [](const auto& a, const auto& b)
                       {
                           if (a.is_sfx != b.is_sfx)
+                          {
                               return !a.is_sfx;
+                          }
                           return a.name < b.name;
                       });
 
@@ -428,7 +500,9 @@ model_instance* add_model(const std::string& path,
 void remove_model(int idx)
 {
     if (idx < 0 || static_cast<std::size_t>(idx) >= g_models.size())
+    {
         return;
+    }
     g_ctx->renderer->unload_model(
         g_models[static_cast<std::size_t>(idx)].handle);
     g_models.erase(g_models.begin() + idx);
@@ -439,25 +513,37 @@ void remove_model(int idx)
     for (int sel : g_selected_set)
     {
         if (sel > idx)
+        {
             new_selection.insert(sel - 1);
+        }
         else if (sel < idx)
+        {
             new_selection.insert(sel);
+        }
     }
     g_selected_set = std::move(new_selection);
 
     if (g_selected == idx)
+    {
         g_selected = -1;
+    }
     else if (g_selected > idx)
+    {
         g_selected--;
+    }
 
     if (g_selected == -1 && !g_selected_set.empty())
+    {
         g_selected = *g_selected_set.begin();
+    }
 }
 
 model_instance* duplicate_model(int idx)
 {
     if (idx < 0 || static_cast<std::size_t>(idx) >= g_models.size())
+    {
         return nullptr;
+    }
 
     const auto& src = g_models[static_cast<std::size_t>(idx)];
 
@@ -496,9 +582,13 @@ model_instance* duplicate_model(int idx)
 void focus_camera_on_object(int idx)
 {
     if (idx < 0 || static_cast<std::size_t>(idx) >= g_models.size())
+    {
         return;
+    }
     if (g_camera == entt::null || !g_ctx->registry->valid(g_camera))
+    {
         return;
+    }
 
     const auto& obj = g_models[static_cast<std::size_t>(idx)];
     auto& cam = g_ctx->registry->get<euengine::camera_component>(g_camera);
@@ -515,8 +605,8 @@ void focus_camera_on_object(int idx)
     // Position camera behind and above the object, closer to it
     // Camera should be at object's X, slightly above, and behind (higher Z)
     cam.position =
-        glm::vec3(obj_pos.x,                    // Same X as object
-                  obj_pos.y + view_dist * 0.6f, // Above object
+        glm::vec3(obj_pos.x,                      // Same X as object
+                  obj_pos.y + (view_dist * 0.6f), // Above object
                   obj_pos.z + view_dist // Behind object (further from origin)
         );
 
@@ -527,13 +617,15 @@ void focus_camera_on_object(int idx)
     // Calculate direction from camera to object
     glm::vec3 to_obj = obj_pos - cam.position;
     float     dist_horizontal =
-        std::sqrt(to_obj.x * to_obj.x + to_obj.z * to_obj.z);
+        std::sqrt((to_obj.x * to_obj.x) + (to_obj.z * to_obj.z));
 
     // Calculate yaw: horizontal angle (0 = looking along +Z)
-    cam.yaw = std::atan2(to_obj.x, to_obj.z) * 180.0f / 3.14159f;
+    cam.yaw =
+        std::atan2(to_obj.x, to_obj.z) * 180.0f / std::numbers::pi_v<float>;
 
     // Calculate pitch: vertical angle (negative = looking down)
-    cam.pitch = std::atan2(-to_obj.y, dist_horizontal) * 180.0f / 3.14159f;
+    cam.pitch = std::atan2(-to_obj.y, dist_horizontal) * 180.0f /
+                std::numbers::pi_v<float>;
     cam.pitch = glm::clamp(cam.pitch, -89.0f, 89.0f);
 
     ui::log(2, "Focused camera on: " + obj.name);
@@ -542,9 +634,13 @@ void focus_camera_on_object(int idx)
 void teleport_object_to_camera(int idx)
 {
     if (idx < 0 || static_cast<std::size_t>(idx) >= g_models.size())
+    {
         return;
+    }
     if (g_camera == entt::null || !g_ctx->registry->valid(g_camera))
+    {
         return;
+    }
 
     auto& obj = g_models[static_cast<std::size_t>(idx)];
     auto& cam = g_ctx->registry->get<euengine::camera_component>(g_camera);
@@ -559,7 +655,7 @@ void teleport_object_to_camera(int idx)
 
 void apply_sky()
 {
-    if (g_ctx && g_ctx->background)
+    if ((g_ctx != nullptr) && (g_ctx->background != nullptr))
     {
         g_ctx->background->r = ui::g_sky_color[0];
         g_ctx->background->g = ui::g_sky_color[1];
@@ -570,8 +666,12 @@ void apply_sky()
 void rebuild_grid()
 {
     for (auto h : g_grids)
-        if (h != euengine::invalid_mesh && g_ctx->renderer)
+    {
+        if (h != euengine::invalid_mesh && (g_ctx->renderer != nullptr))
+        {
             g_ctx->renderer->destroy_mesh(h);
+        }
+    }
     g_grids.clear();
 
     // Infinite ground grid - very large size with many subdivisions
@@ -585,7 +685,9 @@ void rebuild_grid()
     // Make lines very long to appear infinite, and slightly above grid to avoid
     // z-fighting
     if (g_origin_axis != euengine::invalid_mesh)
+    {
         g_ctx->renderer->destroy_mesh(g_origin_axis);
+    }
 
     const float axis_len = 10000.0f; // Very long to appear infinite
     const float axis_y_offset =
@@ -604,7 +706,7 @@ void rebuild_grid()
         const glm::vec3 half_thick1 = perp1 * (axis_thickness * 0.5f);
         const glm::vec3 half_thick2 = perp2 * (axis_thickness * 0.5f);
 
-        const uint16_t base_idx = static_cast<uint16_t>(verts.size());
+        const auto base_idx = static_cast<uint16_t>(verts.size());
 
         // Create quad vertices
         verts.push_back({ { start + half_thick1 + half_thick2 }, color });

@@ -1212,7 +1212,7 @@ void Renderer::draw_mesh_internal(const gpu_mesh& m)
 
 void Renderer::draw(mesh_handle h)
 {
-    [[maybe_unused]] auto _profiler_zone =
+    [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(profiler_, "Renderer::draw");
 
     if (auto it = meshes_.find(h); it != meshes_.end())
@@ -1532,7 +1532,7 @@ void Renderer::unload_model(model_handle h)
 void Renderer::draw_textured_mesh_internal(const gpu_textured_mesh& m,
                                            texture_handle           tex_handle)
 {
-    [[maybe_unused]] auto _profiler_zone =
+    [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(profiler_, "Renderer::draw_textured_mesh");
 
     if ((current_pass_ == nullptr) || (current_cmd_ == nullptr))
@@ -1578,7 +1578,7 @@ void Renderer::set_profiler(i_profiler* profiler) noexcept
 
 void Renderer::draw_model(model_handle h, const transform& xform)
 {
-    [[maybe_unused]] auto _profiler_zone =
+    [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(profiler_, "Renderer::draw_model");
 
     auto it = models_.find(h);
@@ -1617,7 +1617,7 @@ void Renderer::draw_model(model_handle h, const transform& xform)
     // Draw each mesh with its own texture
     for (const auto& mesh : model.meshes)
     {
-        [[maybe_unused]] auto _profiler_zone_mesh =
+        [[maybe_unused]] auto profiler_zone_mesh =
             profiler_zone_begin(profiler_, "Renderer::draw_model::mesh");
         const auto tex =
             (mesh.texture != invalid_texture)
