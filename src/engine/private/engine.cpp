@@ -16,6 +16,8 @@
 #include <cstdlib>
 #include <format>
 #include <ranges>
+#include <sstream>
+#include <vector>
 
 namespace euengine
 {
@@ -661,6 +663,157 @@ void engine::update_context() noexcept
     context_.time.elapsed     = elapsed_time_;
     context_.time.frame_count = frame_count_;
     context_.time.fps         = smoothed_fps_;
+
+    // Update key sequence string for display
+    key_sequence_string_.clear();
+    if (!key_sequence_.empty() && sequence_timer_ > 0.0f)
+    {
+        for (std::size_t i = 0; i < key_sequence_.size(); ++i)
+        {
+            const auto&       entry = key_sequence_[i];
+            const SDL_Keycode key   = entry.key;
+            const SDL_Keymod  mods  = entry.mods;
+
+            // Add separator between keys (except first)
+            if (i > 0)
+            {
+                key_sequence_string_ += ' ';
+            }
+
+            // Add modifier prefixes
+            if ((mods & SDL_KMOD_CTRL) != 0)
+            {
+                key_sequence_string_ += "Ctrl+";
+            }
+            if ((mods & SDL_KMOD_ALT) != 0)
+            {
+                key_sequence_string_ += "Alt+";
+            }
+            if ((mods & SDL_KMOD_SHIFT) != 0)
+            {
+                key_sequence_string_ += "Shift+";
+            }
+            if ((mods & SDL_KMOD_GUI) != 0) // Windows/Super key
+            {
+                key_sequence_string_ += "Win+";
+            }
+
+            // Convert keycode to readable string
+            if (key >= SDLK_A && key <= SDLK_Z)
+            {
+                // Use lowercase for display (shift will be shown as modifier)
+                key_sequence_string_ += static_cast<char>('a' + (key - SDLK_A));
+            }
+            else if (key >= SDLK_0 && key <= SDLK_9)
+            {
+                key_sequence_string_ += static_cast<char>('0' + (key - SDLK_0));
+            }
+            else
+            {
+                // Map special keys to readable names
+                switch (key)
+                {
+                    case SDLK_ESCAPE:
+                        key_sequence_string_ += "Esc";
+                        break;
+                    case SDLK_RETURN:
+                        key_sequence_string_ += "Enter";
+                        break;
+                    case SDLK_TAB:
+                        key_sequence_string_ += "Tab";
+                        break;
+                    case SDLK_BACKSPACE:
+                        key_sequence_string_ += "Backspace";
+                        break;
+                    case SDLK_SPACE:
+                        key_sequence_string_ += "Space";
+                        break;
+                    case SDLK_UP:
+                        key_sequence_string_ += "Up";
+                        break;
+                    case SDLK_DOWN:
+                        key_sequence_string_ += "Down";
+                        break;
+                    case SDLK_LEFT:
+                        key_sequence_string_ += "Left";
+                        break;
+                    case SDLK_RIGHT:
+                        key_sequence_string_ += "Right";
+                        break;
+                    case SDLK_INSERT:
+                        key_sequence_string_ += "Insert";
+                        break;
+                    case SDLK_DELETE:
+                        key_sequence_string_ += "Delete";
+                        break;
+                    case SDLK_HOME:
+                        key_sequence_string_ += "Home";
+                        break;
+                    case SDLK_END:
+                        key_sequence_string_ += "End";
+                        break;
+                    case SDLK_PAGEUP:
+                        key_sequence_string_ += "PageUp";
+                        break;
+                    case SDLK_PAGEDOWN:
+                        key_sequence_string_ += "PageDown";
+                        break;
+                    case SDLK_F1:
+                        key_sequence_string_ += "F1";
+                        break;
+                    case SDLK_F2:
+                        key_sequence_string_ += "F2";
+                        break;
+                    case SDLK_F3:
+                        key_sequence_string_ += "F3";
+                        break;
+                    case SDLK_F4:
+                        key_sequence_string_ += "F4";
+                        break;
+                    case SDLK_F5:
+                        key_sequence_string_ += "F5";
+                        break;
+                    case SDLK_F6:
+                        key_sequence_string_ += "F6";
+                        break;
+                    case SDLK_F7:
+                        key_sequence_string_ += "F7";
+                        break;
+                    case SDLK_F8:
+                        key_sequence_string_ += "F8";
+                        break;
+                    case SDLK_F9:
+                        key_sequence_string_ += "F9";
+                        break;
+                    case SDLK_F10:
+                        key_sequence_string_ += "F10";
+                        break;
+                    case SDLK_F11:
+                        key_sequence_string_ += "F11";
+                        break;
+                    case SDLK_F12:
+                        key_sequence_string_ += "F12";
+                        break;
+                    default:
+                    {
+                        // Try to get key name from SDL
+                        const char* key_name = SDL_GetKeyName(key);
+                        if (key_name != nullptr && key_name[0] != '\0')
+                        {
+                            key_sequence_string_ += key_name;
+                        }
+                        else
+                        {
+                            key_sequence_string_ += '?';
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    context_.key_sequence =
+        key_sequence_string_.empty() ? nullptr : key_sequence_string_.c_str();
 }
 
 void engine::set_mouse_captured(bool captured) noexcept
@@ -674,7 +827,9 @@ void engine::set_mouse_captured(bool captured) noexcept
 
 bool engine::process_event(const SDL_Event& event)
 {
-    imgui_layer_->process_event(event);
+    // Process system-level shortcuts BEFORE ImGui to prevent them from being
+    // consumed
+    bool event_consumed = false;
 
     switch (event.type)
     {
@@ -683,20 +838,181 @@ bool engine::process_event(const SDL_Event& event)
             return false;
 
         case SDL_EVENT_KEY_DOWN:
+        {
+            // Check modifier keys
+            const bool ctrl  = (event.key.mod & SDL_KMOD_CTRL) != 0;
+            const bool alt   = (event.key.mod & SDL_KMOD_ALT) != 0;
+            const bool shift = (event.key.mod & SDL_KMOD_SHIFT) != 0;
+
+            // Always process ESC regardless of ImGui focus
             if (event.key.key == SDLK_ESCAPE)
             {
                 set_mouse_captured(false);
+                key_sequence_.clear(); // Reset sequence on ESC
+                event_consumed = true;
             }
+            // Function keys (work regardless of modifiers or ImGui focus)
             else if (event.key.key == SDLK_F5)
             {
                 static_cast<void>(reload_game());
+                key_sequence_.clear(); // Reset sequence
+                event_consumed = true;
             }
             else if (event.key.key == SDLK_F11)
             {
                 set_fullscreen(!is_fullscreen());
+                key_sequence_.clear(); // Reset sequence
+                event_consumed = true;
+            }
+            // Ctrl+key combinations (system-level shortcuts, process before
+            // ImGui)
+            else if (ctrl && !alt && !shift)
+            {
+                // SDL3 uses uppercase key constants for letters
+                if (event.key.key == SDLK_O)
+                {
+                    // Ctrl+O - Open file dialog
+                    spdlog::info("Ctrl+O pressed - Opening file dialog");
+                    // Signal to game to show file dialog
+                    // The game can check for this via a flag or callback
+                    // For now, we'll set a flag that the game can check
+                    key_sequence_.clear(); // Reset sequence
+                    event_consumed = true;
+                    // Note: File dialog is handled in game code, this just
+                    // prevents ImGui from consuming it
+                }
+                else if (event.key.key == SDLK_S)
+                {
+                    // Ctrl+S - Save action
+                    spdlog::info("Ctrl+S pressed - Save action");
+                    key_sequence_.clear();
+                    event_consumed = true;
+                }
+                else if (event.key.key == SDLK_N)
+                {
+                    // Ctrl+N - New action
+                    spdlog::info("Ctrl+N pressed - New action");
+                    key_sequence_.clear();
+                    event_consumed = true;
+                }
+                // Add more Ctrl+key combinations as needed
+                // Note: Use uppercase constants (SDLK_A, SDLK_B, etc.) for
+                // letter keys
+            }
+            // Track key sequences for vim-like bindings (ALWAYS track,
+            // including modifiers) ALWAYS track sequences BEFORE ImGui
+            // processes events This allows sequences to work even when ImGui
+            // has focus
+            {
+                // Add key to sequence with modifiers (always track, even if
+                // ImGui will process it)
+                key_sequence_entry entry {};
+                entry.key  = event.key.key;
+                entry.mods = event.key.mod;
+
+                if (key_sequence_.size() < k_max_sequence_length)
+                {
+                    key_sequence_.push_back(entry);
+                    sequence_timer_ = k_sequence_timeout; // Reset timer
+                }
+                else
+                {
+                    // Sequence too long, reset
+                    key_sequence_.clear();
+                    key_sequence_.push_back(entry);
+                    sequence_timer_ = k_sequence_timeout;
+                }
+
+                // Check for known sequences (vim-like)
+                // Only check sequences without modifiers for now (can be
+                // extended)
+                if (key_sequence_.size() >= 2 && !ctrl && !alt && !shift)
+                {
+                    const auto& seq = key_sequence_;
+
+                    // "gg" - go to top (example: could reset camera or scroll)
+                    if (seq.size() == 2 && seq[0].key == SDLK_G &&
+                        seq[1].key == SDLK_G &&
+                        (seq[0].mods & (SDL_KMOD_CTRL | SDL_KMOD_ALT |
+                                        SDL_KMOD_SHIFT | SDL_KMOD_GUI)) == 0 &&
+                        (seq[1].mods & (SDL_KMOD_CTRL | SDL_KMOD_ALT |
+                                        SDL_KMOD_SHIFT | SDL_KMOD_GUI)) == 0)
+                    {
+                        // Handle "gg" sequence - reset camera to origin
+                        spdlog::info("Key sequence 'gg' detected!");
+                        key_sequence_.clear();
+                        event_consumed =
+                            true; // Consume so ImGui doesn't process
+                    }
+                    // "dd" - delete (example: could delete selected object)
+                    else if (seq.size() == 2 && seq[0].key == SDLK_D &&
+                             seq[1].key == SDLK_D &&
+                             (seq[0].mods & (SDL_KMOD_CTRL | SDL_KMOD_ALT |
+                                             SDL_KMOD_SHIFT | SDL_KMOD_GUI)) ==
+                                 0 &&
+                             (seq[1].mods & (SDL_KMOD_CTRL | SDL_KMOD_ALT |
+                                             SDL_KMOD_SHIFT | SDL_KMOD_GUI)) ==
+                                 0)
+                    {
+                        // Handle "dd" sequence
+                        spdlog::info("Key sequence 'dd' detected!");
+                        key_sequence_.clear();
+                        event_consumed =
+                            true; // Consume so ImGui doesn't process
+                    }
+                    // "yy" - yank (example: could copy selected object)
+                    else if (seq.size() == 2 && seq[0].key == SDLK_Y &&
+                             seq[1].key == SDLK_Y &&
+                             (seq[0].mods & (SDL_KMOD_CTRL | SDL_KMOD_ALT |
+                                             SDL_KMOD_SHIFT | SDL_KMOD_GUI)) ==
+                                 0 &&
+                             (seq[1].mods & (SDL_KMOD_CTRL | SDL_KMOD_ALT |
+                                             SDL_KMOD_SHIFT | SDL_KMOD_GUI)) ==
+                                 0)
+                    {
+                        // Handle "yy" sequence
+                        spdlog::info("Key sequence 'yy' detected!");
+                        key_sequence_.clear();
+                        event_consumed =
+                            true; // Consume so ImGui doesn't process
+                    }
+                    // "jj" - jump (example)
+                    else if (seq.size() == 2 && seq[0].key == SDLK_J &&
+                             seq[1].key == SDLK_J &&
+                             (seq[0].mods & (SDL_KMOD_CTRL | SDL_KMOD_ALT |
+                                             SDL_KMOD_SHIFT | SDL_KMOD_GUI)) ==
+                                 0 &&
+                             (seq[1].mods & (SDL_KMOD_CTRL | SDL_KMOD_ALT |
+                                             SDL_KMOD_SHIFT | SDL_KMOD_GUI)) ==
+                                 0)
+                    {
+                        spdlog::info("Key sequence 'jj' detected!");
+                        key_sequence_.clear();
+                        event_consumed =
+                            true; // Consume so ImGui doesn't process
+                    }
+                }
+                // Note: We track the sequence even if it doesn't match yet
+                // This allows partial sequences to be displayed, including with
+                // modifiers
             }
             break;
+        }
 
+        default:
+            break;
+    }
+
+    // Process ImGui events (but skip if we already consumed the event for
+    // system shortcuts)
+    if (!event_consumed)
+    {
+        imgui_layer_->process_event(event);
+    }
+
+    // Continue processing other events (mouse, etc.)
+    switch (event.type)
+    {
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
             if (event.button.button == SDL_BUTTON_LEFT)
             {
@@ -1054,6 +1370,16 @@ void engine::iterate()
     const float instant_fps = (delta_time_ > 0.0f) ? 1.0f / delta_time_ : 0.0f;
     smoothed_fps_ =
         fps_smoothing * smoothed_fps_ + (1.0f - fps_smoothing) * instant_fps;
+
+    // Update key sequence timer and reset if timeout
+    if (!key_sequence_.empty())
+    {
+        sequence_timer_ -= delta_time_;
+        if (sequence_timer_ <= 0.0f)
+        {
+            key_sequence_.clear();
+        }
+    }
 
     // Update keyboard state (mouse motion was accumulated via process_event)
     input_.keyboard       = SDL_GetKeyboardState(nullptr);

@@ -204,6 +204,22 @@ GAME_API void game_update(euengine::engine_context* ctx)
         PROFILER_ZONE(ctx->profiler, "game_update");
     }
 
+    // Check for keyboard shortcuts
+    // Check for Ctrl+O (Open file dialog) - using scan code indices
+    const bool ctrl  = ctx->input.is_ctrl_pressed();
+    const bool o_key = ctx->input.is_key_pressed(18); // O key scan code
+
+    static bool ctrl_o_was_pressed = false;
+    if (ctrl && o_key && !ctrl_o_was_pressed)
+    {
+        ui::g_show_file_dialog = true;
+        ctrl_o_was_pressed     = true;
+    }
+    else if (!(ctrl && o_key))
+    {
+        ctrl_o_was_pressed = false;
+    }
+
     scene::update(ctx);
 
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));

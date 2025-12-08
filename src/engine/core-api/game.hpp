@@ -14,15 +14,41 @@ namespace euengine
 /// Input state provided to game each frame
 struct input_state final
 {
-    const bool* keyboard       = nullptr;
-    float       mouse_x        = 0.0f; ///< Mouse X position in window
-    float       mouse_y        = 0.0f; ///< Mouse Y position in window
-    float       mouse_xrel     = 0.0f; ///< Relative mouse X motion
-    float       mouse_yrel     = 0.0f; ///< Relative mouse Y motion
-    bool        mouse_left     = false;
+    const bool* keyboard   = nullptr; ///< Keyboard state array (SDL scan codes)
+    float       mouse_x    = 0.0f;    ///< Mouse X position in window
+    float       mouse_y    = 0.0f;    ///< Mouse Y position in window
+    float       mouse_xrel = 0.0f;    ///< Relative mouse X motion
+    float       mouse_yrel = 0.0f;    ///< Relative mouse Y motion
+    bool        mouse_left = false;
     bool        mouse_right    = false;
     bool        mouse_middle   = false;
     bool        mouse_captured = false;
+
+    /// Check if a key is pressed (using scan code index)
+    /// @param scancode_index Scan code index (e.g., 224 for LCTRL, 228 for
+    /// RCTRL, 18 for O)
+    [[nodiscard]] bool is_key_pressed(int scancode_index) const noexcept
+    {
+        return keyboard != nullptr && keyboard[scancode_index];
+    }
+
+    /// Check if Ctrl is pressed (either left or right)
+    [[nodiscard]] bool is_ctrl_pressed() const noexcept
+    {
+        return is_key_pressed(224) || is_key_pressed(228); // LCTRL or RCTRL
+    }
+
+    /// Check if Alt is pressed (either left or right)
+    [[nodiscard]] bool is_alt_pressed() const noexcept
+    {
+        return is_key_pressed(226) || is_key_pressed(230); // LALT or RALT
+    }
+
+    /// Check if Shift is pressed (either left or right)
+    [[nodiscard]] bool is_shift_pressed() const noexcept
+    {
+        return is_key_pressed(225) || is_key_pressed(229); // LSHIFT or RSHIFT
+    }
 };
 
 /// Display information
@@ -86,6 +112,12 @@ struct engine_context final
     time_info          time      = {};
     clear_color*       background =
         nullptr; ///< Game can modify to change clear color
+
+    /// Current key sequence for vim-like bindings (read-only)
+    /// Format: string representation of keys pressed (e.g., "gg", "dd")
+    /// Empty if no sequence is active
+    const char* key_sequence =
+        nullptr; ///< Pointer to internal buffer, valid until next frame
 
     // Legacy compatibility
     [[nodiscard]] float delta_time() const noexcept { return time.delta; }

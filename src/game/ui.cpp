@@ -1952,6 +1952,34 @@ void draw(euengine::engine_context* ctx)
     {
         io.WantCaptureMouse = false;
     }
+
+    // Display key sequence in bottom left corner (vim-like) - draw last so it's
+    // on top
+    if (ctx->key_sequence != nullptr && std::strlen(ctx->key_sequence) > 0)
+    {
+        // Position with proper padding from edges to ensure full visibility
+        const float padding = 15.0f;
+        ImGui::SetNextWindowPos(
+            ImVec2(padding, io.DisplaySize.y - 35.0f - padding),
+            ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.85f); // Semi-transparent
+        ImGuiWindowFlags flags =
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoFocusOnAppearing;
+
+        // Set window padding using style var
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 6.0f));
+        if (ImGui::Begin("KeySequence", nullptr, flags))
+        {
+            ImGui::TextColored(
+                ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%s", ctx->key_sequence);
+        }
+        ImGui::End();
+        ImGui::PopStyleVar();
+    }
 }
 
 void draw_file_dialog()

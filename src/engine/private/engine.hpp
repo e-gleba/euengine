@@ -277,6 +277,18 @@ private:
     float    smoothed_fps_ = 60.0f;
     uint64_t frame_count_  = 0;
 
+    // Vim-like key sequence tracking
+    static constexpr std::size_t k_max_sequence_length = 8;
+    static constexpr float       k_sequence_timeout = 1.0f; // 1 second timeout
+    struct key_sequence_entry
+    {
+        SDL_Keycode key;
+        SDL_Keymod  mods; // Modifier keys (Ctrl, Alt, Shift, etc.)
+    };
+    std::vector<key_sequence_entry> key_sequence_ {};
+    float                           sequence_timer_ = 0.0f;
+    std::string key_sequence_string_ {}; // String representation for display
+
     // State
     bool        running_        = false;
     bool        mouse_captured_ = false;
