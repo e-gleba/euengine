@@ -14,7 +14,6 @@
 namespace
 {
 
-/// Application state for SDL callbacks
 struct app_state final
 {
     std::unique_ptr<euengine::engine> eng;
@@ -24,19 +23,28 @@ struct app_state final
     bool                  game_loaded = false;
 };
 
-[[nodiscard]] std::filesystem::path get_game_library_path()
+[[nodiscard]] std::filesystem::path get_game_library_path() noexcept
 {
     const char* base_path = SDL_GetBasePath();
     if (base_path == nullptr)
     {
+        spdlog::error("SDL_GetBasePath failed: {}", SDL_GetError());
         return {};
     }
 
-    return std::filesystem::path(base_path) /
-           euengine::platform::game_library_name();
+    try
+    {
+        return std::filesystem::path { base_path } /
+               euengine::platform::game_library_name();
+    }
+    catch (const std::exception& e)
+    {
+        spdlog::error("'{}' path build failed: {}", base_path, e.what());
+    }
+
+    return {};
 }
 
-/// Try to load game library and call preinit if available
 [[nodiscard]] euengine::preinit_result try_game_preinit(
     const std::filesystem::path& path, euengine::preinit_settings* settings)
 {
@@ -46,36 +54,35 @@ struct app_state final
         return euengine::preinit_result::skip;
     }
 
-    auto* lib = SDL_LoadObject(path.c_str());
-    if (lib == nullptr)
+    auto* shared_object = SDL_LoadObject(path.c_str());
+    if (shared_object == nullptr)
     {
-        spdlog::warn("failed to load game library: {}", SDL_GetError());
+        spdlog::error("failed to load game library: {}", SDL_GetError());
         return euengine::preinit_result::skip;
     }
 
+    struct so_guard final
+    {
+        SDL_SharedObject* p {};
+        ~so_guard() noexcept { SDL_UnloadObject(p); }
+    } lib { shared_object };
+
     auto* preinit_fn = reinterpret_cast<euengine::game_preinit_fn>(
-        SDL_LoadFunction(lib, "game_preinit"));
+        SDL_LoadFunction(shared_object, "game_preinit"));
 
-    euengine::preinit_result result = euengine::preinit_result::ok;
-    if (preinit_fn != nullptr)
+    if (preinit_fn == nullptr)
     {
-        spdlog::info("=> calling game_preinit");
-        result = preinit_fn(settings);
-    }
-    else
-    {
-        spdlog::debug("game_preinit not found, using defaults");
+        spdlog::error("failed to load game preinit funtion in '{}': {}",
+                      path,
+                      SDL_GetError());
+        return euengine::preinit_result::skip;
     }
 
-    SDL_UnloadObject(lib);
-    return result;
+    spdlog::info("calling game preinit");
+    return preinit_fn(settings);
 }
 
 } // namespace
-
-// =============================================================================
-// SDL3 Main Callbacks
-// =============================================================================
 
 SDL_AppResult SDL_AppInit(void**                 appstate,
                           [[maybe_unused]] int   argc,
@@ -83,7 +90,6 @@ SDL_AppResult SDL_AppInit(void**                 appstate,
 {
     spdlog::info("=> SDL_AppInit");
 
-    // Create application state
     auto* state = new app_state {};
     *appstate   = state;
 
@@ -98,10 +104,8 @@ SDL_AppResult SDL_AppInit(void**                 appstate,
         .high_dpi  = true,
     };
 
-    // Get game library path
     state->game_lib_path = get_game_library_path();
 
-    // Try to call game preinit to allow configuration
     auto preinit_result =
         try_game_preinit(state->game_lib_path, &state->settings);
 
@@ -123,7 +127,6 @@ SDL_AppResult SDL_AppInit(void**                 appstate,
             break;
     }
 
-    // Initialize SDL subsystems
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
     {
         spdlog::error("SDL_Init: {}", SDL_GetError());
@@ -132,7 +135,6 @@ SDL_AppResult SDL_AppInit(void**                 appstate,
         return SDL_APP_FAILURE;
     }
 
-    // Create and initialize engine
     state->eng = std::make_unique<euengine::engine>();
 
     if (!state->eng->init(state->settings))
@@ -143,7 +145,6 @@ SDL_AppResult SDL_AppInit(void**                 appstate,
         return SDL_APP_FAILURE;
     }
 
-    // Load game library if available
     if (state->game_loaded && !state->game_lib_path.empty())
     {
         if (!state->eng->load_game(state->game_lib_path))
@@ -166,7 +167,7 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
     if (!state->eng->process_event(*event))
     {
-        return SDL_APP_SUCCESS; // Quit requested
+        return SDL_APP_SUCCESS;
     }
 
     return SDL_APP_CONTINUE;
@@ -182,7 +183,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
     if (!state->eng->is_running())
     {
-        return SDL_APP_SUCCESS; // Quit requested
+        return SDL_APP_SUCCESS;
     }
 
     state->eng->iterate();
