@@ -1,2 +1,2 @@
 add_subdirectory(core-api)
-add_subdirectory(private)
+add_subdirectory(details)
