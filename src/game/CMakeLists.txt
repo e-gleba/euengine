@@ -15,7 +15,15 @@ set_target_properties(
 
 target_link_libraries(
     game
-    PRIVATE warnings glm EnTT::EnTT spdlog implot imgui engine_interface
+    PRIVATE
+        warnings
+        glm
+        EnTT::EnTT
+        spdlog
+        implot
+        imgui
+        engine_interface
+        pybind11::embed
 )
 
 # Link Tracy if available

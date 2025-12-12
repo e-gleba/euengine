@@ -37,6 +37,11 @@ add_custom_command(
     COMMAND
         ${CMAKE_COMMAND} -E create_symlink "${CMAKE_SOURCE_DIR}/assets"
         "$<TARGET_FILE_DIR:engine>/assets"
-    COMMENT "Creating symlinks to shaders and assets"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:engine>/game"
+    COMMAND
+        ${CMAKE_COMMAND} -E create_symlink
+        "${CMAKE_SOURCE_DIR}/src/game/scripts"
+        "$<TARGET_FILE_DIR:engine>/game/scripts"
+    COMMENT "Creating symlinks to shaders, assets, and game scripts"
     VERBATIM
 )

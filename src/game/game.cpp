@@ -1,4 +1,5 @@
 #include "profiler.hpp"
+#include "python_bindings.hpp"
 #include "scene.hpp"
 #include "ui.hpp"
 
@@ -180,12 +181,26 @@ GAME_API bool game_init(euengine::engine_context* ctx)
     ui::init();
 
     scene::init(ctx);
+
+    // Initialize Python scripting
+    python_scripting::init_python();
+    python_scripting::set_context(ctx);
+
+    // Run the demo script
+    std::filesystem::path script_path =
+        std::filesystem::current_path() / "game" / "scripts" / "scene_demo.py";
+    python_scripting::run_script(script_path.string());
+
     return true;
 }
 
 GAME_API void game_shutdown()
 {
     spdlog::info("Game module unloaded");
+
+    // Shutdown Python scripting
+    python_scripting::shutdown_python();
+
     scene::shutdown();
     ui::log_clear();
 
@@ -220,6 +235,9 @@ GAME_API void game_update(euengine::engine_context* ctx)
     }
 
     scene::update(ctx);
+
+    // Update Python scripts
+    python_scripting::update_scripts(ctx->time.elapsed, ctx->time.delta);
 
     ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
     if (!ImGui::GetIO().WantCaptureMouse && ImGui::GetIO().MouseClicked[0])
