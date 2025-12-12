@@ -73,7 +73,7 @@ struct app_state final
     if (preinit_fn == nullptr)
     {
         spdlog::error("failed to load game preinit funtion in '{}': {}",
-                      path,
+                      path.string(),
                       SDL_GetError());
         return euengine::preinit_result::skip;
     }

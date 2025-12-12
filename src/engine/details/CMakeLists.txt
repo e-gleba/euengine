@@ -25,6 +25,7 @@ target_link_libraries(
         stb
         imgui_sdl3
         pybind11::embed
+        Microsoft.GSL::GSL
 )
 
 add_custom_command(

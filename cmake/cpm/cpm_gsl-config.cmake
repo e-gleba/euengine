@@ -1,0 +1,10 @@
+cpmaddpackage(
+  NAME Microsoft.GSL
+  GITHUB_REPOSITORY microsoft/GSL
+  GIT_TAG v4.2.0
+  GIT_SHALLOW ON
+  SYSTEM ON
+  OPTIONS
+    "GSL_TEST OFF"
+    "GSL_INSTALL OFF"
+)
