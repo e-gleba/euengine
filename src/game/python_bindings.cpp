@@ -43,9 +43,9 @@ glm::vec3 tuple_to_vec3(const py::object& obj)
         auto seq = py::cast<py::sequence>(obj);
         if (py::len(seq) >= 3)
         {
-            return glm::vec3(py::cast<float>(seq[0]),
-                             py::cast<float>(seq[1]),
-                             py::cast<float>(seq[2]));
+            return { py::cast<float>(seq[0]),
+                     py::cast<float>(seq[1]),
+                     py::cast<float>(seq[2]) };
         }
     }
     return glm::vec3(0.0f);

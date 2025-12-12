@@ -24,7 +24,6 @@ target_link_libraries(
         yaml-cpp
         stb
         imgui_sdl3
-        pybind11::embed
         Microsoft.GSL::GSL
 )
 
