@@ -6,17 +6,17 @@ add_subdirectory(model)
 # Only include .cpp files in this directory, not subdirectories
 file(GLOB src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 
-add_library(renderer_manager STATIC ${src})
+add_library(render_system STATIC ${src})
 
-target_include_directories(renderer_manager PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(render_system PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 set_target_properties(
-    renderer_manager
+    render_system
     PROPERTIES CXX_STANDARD 26 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
 )
 
 target_link_libraries(
-    renderer_manager
+    render_system
     PRIVATE
         engine_interface
         euengine::texture
@@ -28,4 +28,4 @@ target_link_libraries(
         SDL3::SDL3-static
 )
 
-add_library(euengine::render ALIAS renderer_manager)
+add_library(euengine::render ALIAS render_system)

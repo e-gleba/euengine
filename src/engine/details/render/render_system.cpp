@@ -1,7 +1,7 @@
-/// @file renderer_manager.cpp
+/// @file render_system.cpp
 /// @brief Render system implementation wrapping Renderer class
 
-#include "renderer_manager.hpp"
+#include "render_system.hpp"
 #include "renderer.hpp"
 #include "shader/shader.hpp"
 

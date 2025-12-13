@@ -2,7 +2,7 @@
 #include "audio/audio.hpp"
 #include "game_module/game_module_manager.hpp"
 #include "overlay/imgui_layer.hpp"
-#include "render/renderer_manager.hpp"
+#include "render/render_system.hpp"
 #include "render/shader/shader.hpp"
 
 #include <core-api/camera.hpp>
