@@ -11,13 +11,12 @@
 #include <chrono>
 #include <cstdlib>
 #include <format>
-#include <random>
 
 namespace euengine
 {
 
 // PIMPL implementation to hide SDL3 details
-class game_module_manager::impl
+class game_module_manager::impl final
 {
 public:
     impl() = default;
