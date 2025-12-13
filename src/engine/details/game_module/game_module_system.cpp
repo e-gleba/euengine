@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <format>
 
-namespace euengine
+namespace egen
 {
 
 // PIMPL implementation to hide SDL3 details
@@ -295,4 +295,4 @@ void game_module_system::call_ui(engine_context* ctx) const
     pimpl_->call_ui(ctx);
 }
 
-} // namespace euengine
+} // namespace egen

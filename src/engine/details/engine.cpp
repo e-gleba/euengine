@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <vector>
 
-namespace euengine
+namespace egen
 {
 
 // RAII deleters implementation
@@ -1452,4 +1452,4 @@ void engine::capture_frame_image(SDL_GPUTexture* texture,
     SDL_ReleaseGPUTransferBuffer(device_.get(), tb);
 }
 
-} // namespace euengine
+} // namespace egen

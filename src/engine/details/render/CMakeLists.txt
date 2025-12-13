@@ -19,13 +19,13 @@ target_link_libraries(
     render_system
     PRIVATE
         engine_interface
-        euengine::texture
-        euengine::shader
-        euengine::model
+        egen::texture
+        egen::shader
+        egen::model
         warnings
         glm
         spdlog
         SDL3::SDL3-static
 )
 
-add_library(euengine::render ALIAS render_system)
+add_library(egen::render ALIAS render_system)

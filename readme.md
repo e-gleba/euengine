@@ -1,8 +1,8 @@
 ![Preview](.github/preview.png)
 
-# euengine
+# egen
 
-SDL3 GPU engine with hot-reload architecture.
+Edge-gen: SDL3 GPU engine with hot-reload architecture.
 
 ## Key Technologies
 

@@ -10,7 +10,7 @@
 
 #include <entt/entt.hpp>
 
-namespace euengine
+namespace egen
 {
 
 // Forward declaration to break circular dependency
@@ -185,4 +185,4 @@ extern "C"
 #define GAME_API extern "C" __attribute__((visibility("default")))
 #endif
 
-} // namespace euengine
+} // namespace egen

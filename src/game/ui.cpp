@@ -125,7 +125,7 @@ void load_gltf_glb_scene(const std::filesystem::path& path)
     }
 }
 
-void draw_menu(euengine::engine_context* ctx)
+void draw_menu(egen::engine_context* ctx)
 {
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 8));
 
@@ -300,7 +300,7 @@ void draw_menu(euengine::engine_context* ctx)
     ImGui::PopStyleVar();
 }
 
-void draw_scene(euengine::engine_context* ctx)
+void draw_scene(egen::engine_context* ctx)
 {
     if (!g_show_hierarchy)
     {
@@ -325,8 +325,8 @@ void draw_scene(euengine::engine_context* ctx)
             if (scene::g_camera != entt::null &&
                 ctx->registry->valid(scene::g_camera))
             {
-                auto& cam = ctx->registry->get<euengine::camera_component>(
-                    scene::g_camera);
+                auto& cam =
+                    ctx->registry->get<egen::camera_component>(scene::g_camera);
 
                 ImGui::PushStyleColor(ImGuiCol_Text,
                                       ImVec4(0.55f, 0.55f, 0.58f, 1.0f));
@@ -598,7 +598,7 @@ void draw_scene(euengine::engine_context* ctx)
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) &&
                     scene::g_camera != entt::null)
                 {
-                    auto& cam = ctx->registry->get<euengine::camera_component>(
+                    auto& cam = ctx->registry->get<egen::camera_component>(
                         scene::g_camera);
                     cam.position = m.transform.position + glm::vec3(0, 2, 5);
                     cam.pitch    = -15.0f;
@@ -998,7 +998,7 @@ void draw_browser()
     ImGui::End();
 }
 
-void draw_audio(euengine::engine_context* ctx)
+void draw_audio(egen::engine_context* ctx)
 {
     if (!g_show_audio || (ctx->audio_system == nullptr))
     {
@@ -1061,11 +1061,11 @@ void draw_audio(euengine::engine_context* ctx)
             auto safe_name = sanitize_utf8(t.name);
             if (ImGui::Selectable(safe_name.c_str(), playing))
             {
-                if (t.handle == euengine::invalid_music)
+                if (t.handle == egen::invalid_music)
                 {
                     t.handle = ctx->audio_system->load_music(t.path);
                 }
-                if (t.handle != euengine::invalid_music)
+                if (t.handle != egen::invalid_music)
                 {
                     ctx->audio_system->play_music(t.handle, !t.is_sfx);
                     scene::g_playing = static_cast<int>(i);
@@ -1120,7 +1120,7 @@ void draw_audio(euengine::engine_context* ctx)
     ImGui::End();
 }
 
-void draw_engine(euengine::engine_context* ctx)
+void draw_engine(egen::engine_context* ctx)
 {
     if (!g_show_engine)
     {
@@ -1168,18 +1168,18 @@ void draw_engine(euengine::engine_context* ctx)
         int vs = static_cast<int>(ctx->settings->get_vsync());
         if (ImGui::RadioButton("Enabled", vs == 1))
         {
-            ctx->settings->set_vsync(euengine::vsync_mode::enabled);
+            ctx->settings->set_vsync(egen::vsync_mode::enabled);
         }
         ImGui::SameLine();
         if (ImGui::RadioButton("Adaptive", vs == 2))
         {
-            ctx->settings->set_vsync(euengine::vsync_mode::adaptive);
+            ctx->settings->set_vsync(egen::vsync_mode::adaptive);
         }
 
         // If somehow disabled, force to enabled
         if (vs == 0)
         {
-            ctx->settings->set_vsync(euengine::vsync_mode::enabled);
+            ctx->settings->set_vsync(egen::vsync_mode::enabled);
         }
 
         ImGui::Spacing();
@@ -1202,22 +1202,22 @@ void draw_engine(euengine::engine_context* ctx)
 
         // Check GPU support for each MSAA level
         bool msaa2_ok =
-            ctx->settings->is_msaa_supported(euengine::msaa_samples::x2);
+            ctx->settings->is_msaa_supported(egen::msaa_samples::x2);
         bool msaa4_ok =
-            ctx->settings->is_msaa_supported(euengine::msaa_samples::x4);
+            ctx->settings->is_msaa_supported(egen::msaa_samples::x4);
         bool msaa8_ok =
-            ctx->settings->is_msaa_supported(euengine::msaa_samples::x8);
+            ctx->settings->is_msaa_supported(egen::msaa_samples::x8);
 
         if (ImGui::RadioButton("Off", msaa == 1))
         {
-            ctx->settings->set_msaa(euengine::msaa_samples::none);
+            ctx->settings->set_msaa(egen::msaa_samples::none);
         }
         ImGui::SameLine();
 
         ImGui::BeginDisabled(!msaa2_ok);
         if (ImGui::RadioButton("2x", msaa == 2))
         {
-            ctx->settings->set_msaa(euengine::msaa_samples::x2);
+            ctx->settings->set_msaa(egen::msaa_samples::x2);
         }
         ImGui::EndDisabled();
         ImGui::SameLine();
@@ -1225,7 +1225,7 @@ void draw_engine(euengine::engine_context* ctx)
         ImGui::BeginDisabled(!msaa4_ok);
         if (ImGui::RadioButton("4x", msaa == 4))
         {
-            ctx->settings->set_msaa(euengine::msaa_samples::x4);
+            ctx->settings->set_msaa(egen::msaa_samples::x4);
         }
         ImGui::EndDisabled();
         ImGui::SameLine();
@@ -1233,7 +1233,7 @@ void draw_engine(euengine::engine_context* ctx)
         ImGui::BeginDisabled(!msaa8_ok);
         if (ImGui::RadioButton("8x", msaa == 8))
         {
-            ctx->settings->set_msaa(euengine::msaa_samples::x8);
+            ctx->settings->set_msaa(egen::msaa_samples::x8);
         }
         ImGui::EndDisabled();
         ImGui::Spacing();
@@ -1281,7 +1281,7 @@ void draw_engine(euengine::engine_context* ctx)
         if (ImGui::RadioButton("Nearest", tex_filter == 0))
         {
             ctx->settings->set_texture_filter(
-                euengine::i_engine_settings::texture_filter::nearest);
+                egen::i_engine_settings::texture_filter::nearest);
         }
         if (ImGui::IsItemHovered())
         {
@@ -1292,7 +1292,7 @@ void draw_engine(euengine::engine_context* ctx)
         if (ImGui::RadioButton("Linear", tex_filter == 1))
         {
             ctx->settings->set_texture_filter(
-                euengine::i_engine_settings::texture_filter::linear);
+                egen::i_engine_settings::texture_filter::linear);
         }
         if (ImGui::IsItemHovered())
         {
@@ -1303,7 +1303,7 @@ void draw_engine(euengine::engine_context* ctx)
         if (ImGui::RadioButton("Trilinear", tex_filter == 2))
         {
             ctx->settings->set_texture_filter(
-                euengine::i_engine_settings::texture_filter::trilinear);
+                egen::i_engine_settings::texture_filter::trilinear);
         }
         if (ImGui::IsItemHovered())
         {
@@ -1574,7 +1574,7 @@ void draw_engine(euengine::engine_context* ctx)
     ImGui::End();
 }
 
-void draw_stats(euengine::engine_context* ctx)
+void draw_stats(egen::engine_context* ctx)
 {
     [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(ctx->profiler, "UI::draw_stats");
@@ -2083,7 +2083,7 @@ void draw_shortcuts()
     ImGui::End();
 }
 
-void draw_statusbar(euengine::engine_context* ctx)
+void draw_statusbar(egen::engine_context* ctx)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -2150,7 +2150,7 @@ void init()
     // SetCurrentContext
 }
 
-void draw(euengine::engine_context* ctx)
+void draw(egen::engine_context* ctx)
 {
     ImGuiIO& io = ImGui::GetIO();
 

@@ -19,4 +19,4 @@ target_include_directories(
     PRIVATE ${CMAKE_SOURCE_DIR}/src/engine
 )
 
-add_library(euengine::texture ALIAS texture_system)
+add_library(egen::texture ALIAS texture_system)

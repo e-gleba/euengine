@@ -16,11 +16,11 @@ target_link_libraries(
     engine
     PRIVATE
         engine_interface
-        euengine::audio
-        euengine::game_module
-        euengine::render
-        euengine::shader
-        euengine::overlay
+        egen::audio
+        egen::game_module
+        egen::render
+        egen::shader
+        egen::overlay
         warnings
         glm
         EnTT::EnTT

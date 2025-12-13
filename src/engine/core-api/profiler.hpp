@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace euengine
+namespace egen
 {
 
 /// Abstract profiling interface - engine uses this without knowing
@@ -158,4 +158,4 @@ private:
     return { nullptr, name };
 }
 
-} // namespace euengine
+} // namespace egen

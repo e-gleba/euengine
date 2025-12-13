@@ -9,7 +9,7 @@ typedef union SDL_Event SDL_Event; // SDL3 uses typedef union
 struct SDL_GPUCommandBuffer;
 struct SDL_GPUTexture;
 
-namespace euengine
+namespace egen
 {
 
 /// Overlay layer interface - abstracts overlay/UI rendering implementation
@@ -61,4 +61,4 @@ public:
     [[nodiscard]] virtual bool wants_capture_mouse() const = 0;
 };
 
-} // namespace euengine
+} // namespace egen

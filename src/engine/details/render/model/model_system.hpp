@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <memory>
 
-namespace euengine
+namespace egen
 {
 
 /// Model loading system - handles model loading with format-specific loaders
@@ -38,4 +38,4 @@ private:
     std::unique_ptr<impl> pimpl_;
 };
 
-} // namespace euengine
+} // namespace egen

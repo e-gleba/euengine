@@ -58,14 +58,14 @@ uint64_t alloc_srcloc_for_name(const char* name, size_t name_len) noexcept
 }
 
 // Tracy event callback - subscribes to profiling events and forwards to Tracy
-void tracy_event_callback(const euengine::profiling_event& event,
-                          void*                            userdata) noexcept
+void tracy_event_callback(const egen::profiling_event& event,
+                          void*                        userdata) noexcept
 {
     (void)userdata; // Unused
 
     switch (event.type)
     {
-        case euengine::profiling_event_type::zone_begin:
+        case egen::profiling_event_type::zone_begin:
         {
             const char* zone_name = event.data.zone_begin.zone_name;
             if (zone_name != nullptr)
@@ -82,7 +82,7 @@ void tracy_event_callback(const euengine::profiling_event& event,
             break;
         }
 
-        case euengine::profiling_event_type::zone_end:
+        case egen::profiling_event_type::zone_end:
         {
             const auto it = g_event_zones.find(event.data.zone_end.zone_handle);
             if (it != g_event_zones.end())
@@ -93,13 +93,13 @@ void tracy_event_callback(const euengine::profiling_event& event,
             break;
         }
 
-        case euengine::profiling_event_type::frame_mark:
+        case egen::profiling_event_type::frame_mark:
         {
             FrameMark;
             break;
         }
 
-        case euengine::profiling_event_type::thread_name_set:
+        case egen::profiling_event_type::thread_name_set:
         {
             const char* thread_name = event.data.thread_name.thread_name;
             if (thread_name != nullptr)
@@ -109,7 +109,7 @@ void tracy_event_callback(const euengine::profiling_event& event,
             break;
         }
 
-        case euengine::profiling_event_type::message:
+        case egen::profiling_event_type::message:
         {
             const char* text = event.data.message.text;
             if (text != nullptr)
@@ -119,7 +119,7 @@ void tracy_event_callback(const euengine::profiling_event& event,
             break;
         }
 
-        case euengine::profiling_event_type::frame_image:
+        case egen::profiling_event_type::frame_image:
         {
             const void*   pixels = event.data.frame_image.pixels;
             std::uint32_t width  = event.data.frame_image.width;
@@ -145,9 +145,8 @@ void init_tracy_event_subscription() noexcept
 {
     if (g_tracy_callback_id == 0)
     {
-        g_tracy_callback_id =
-            euengine::profiling_event_dispatcher::add_callback(
-                tracy_event_callback, nullptr);
+        g_tracy_callback_id = egen::profiling_event_dispatcher::add_callback(
+            tracy_event_callback, nullptr);
     }
 }
 
@@ -156,8 +155,7 @@ void cleanup_tracy_event_subscription() noexcept
 {
     if (g_tracy_callback_id != 0)
     {
-        euengine::profiling_event_dispatcher::remove_callback(
-            g_tracy_callback_id);
+        egen::profiling_event_dispatcher::remove_callback(g_tracy_callback_id);
         g_tracy_callback_id = 0;
     }
 }
@@ -170,7 +168,7 @@ void cleanup_tracy_event_subscription() noexcept
 
 #endif
 
-namespace euengine
+namespace egen
 {
 
 #ifdef TRACY_ENABLE
@@ -340,4 +338,4 @@ i_profiler* create_profiler() noexcept
 #endif
 }
 
-} // namespace euengine
+} // namespace egen

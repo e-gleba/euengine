@@ -16,7 +16,7 @@
 #include <string>
 #include <string_view>
 
-namespace euengine
+namespace egen
 {
 
 // Forward declarations
@@ -315,4 +315,4 @@ private:
     static constexpr float k_pitch_limit    = 89.0f;
 };
 
-} // namespace euengine
+} // namespace egen

@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-namespace euengine
+namespace egen
 {
 
 struct camera_component final
@@ -44,4 +44,4 @@ struct camera_component final
     }
 };
 
-} // namespace euengine
+} // namespace egen

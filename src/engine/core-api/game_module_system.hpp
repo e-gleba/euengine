@@ -3,7 +3,7 @@
 #include <entt/entt.hpp>
 #include <filesystem>
 
-namespace euengine
+namespace egen
 {
 
 // Forward declaration
@@ -39,4 +39,4 @@ public:
         const noexcept = 0;
 };
 
-} // namespace euengine
+} // namespace egen

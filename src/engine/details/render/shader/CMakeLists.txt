@@ -19,4 +19,4 @@ target_link_libraries(
         engine_interface
 )
 
-add_library(euengine::shader ALIAS shader_system)
+add_library(egen::shader ALIAS shader_system)

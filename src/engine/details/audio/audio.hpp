@@ -8,7 +8,7 @@ struct MIX_Mixer;
 struct MIX_Audio;
 struct MIX_Track;
 
-namespace euengine
+namespace egen
 {
 
 class audio_system final : public i_audio
@@ -73,4 +73,4 @@ private:
     float sound_volume = 1.0f;
 };
 
-} // namespace euengine
+} // namespace egen

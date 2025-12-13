@@ -15,4 +15,4 @@ target_link_libraries(
     PRIVATE warnings spdlog SDL3::SDL3-static engine_interface imgui_sdl3
 )
 
-add_library(euengine::overlay ALIAS overlay_layer)
+add_library(egen::overlay ALIAS overlay_layer)

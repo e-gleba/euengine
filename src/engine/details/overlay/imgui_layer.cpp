@@ -6,7 +6,7 @@
 #include <imgui_impl_sdlgpu3.h>
 #include <spdlog/spdlog.h>
 
-namespace euengine
+namespace egen
 {
 
 imgui_layer::~imgui_layer()
@@ -135,4 +135,4 @@ void* imgui_layer::get_imgui_context() const
     return ImGui::GetCurrentContext();
 }
 
-} // namespace euengine
+} // namespace egen

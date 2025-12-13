@@ -133,12 +133,12 @@ std::shared_ptr<ui_sink> g_sink;
 
 } // namespace
 
-GAME_API euengine::preinit_result game_preinit(euengine::preinit_settings* s)
+GAME_API egen::preinit_result game_preinit(egen::preinit_settings* s)
 {
-    s->window.title     = "euengine showcase";
+    s->window.title     = "egen showcase";
     s->window.width     = 1600;
     s->window.height    = 900;
-    s->window.vsync     = euengine::vsync_mode::enabled;
+    s->window.vsync     = egen::vsync_mode::enabled;
     s->window.resizable = true;
     s->window.high_dpi  = true;
 
@@ -147,10 +147,10 @@ GAME_API euengine::preinit_result game_preinit(euengine::preinit_settings* s)
 
     s->background = { .r = 0.12f, .g = 0.14f, .b = 0.18f, .a = 1.0f };
 
-    return euengine::preinit_result::ok;
+    return egen::preinit_result::ok;
 }
 
-GAME_API bool game_init(euengine::engine_context* ctx)
+GAME_API bool game_init(egen::engine_context* ctx)
 {
     // Add console sink
     g_sink = std::make_shared<ui_sink>();
@@ -159,12 +159,12 @@ GAME_API bool game_init(euengine::engine_context* ctx)
     spdlog::info("Game module loaded");
 
     // Set up profiler in engine context (created in separate compile unit)
-    auto* profiler = euengine::create_profiler();
+    auto* profiler = egen::create_profiler();
     if (profiler != nullptr)
     {
         // Set thread name via event system (preferred) and old interface
         // (backward compatibility)
-        euengine::profiling_event_dispatcher::emit_thread_name("Main");
+        egen::profiling_event_dispatcher::emit_thread_name("Main");
         profiler->set_thread_name("Main");
         spdlog::info("Profiler enabled");
 
@@ -213,7 +213,7 @@ GAME_API void game_shutdown()
     }
 }
 
-GAME_API void game_update(euengine::engine_context* ctx)
+GAME_API void game_update(egen::engine_context* ctx)
 {
     [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(ctx->profiler, "game_update");
@@ -246,7 +246,7 @@ GAME_API void game_update(euengine::engine_context* ctx)
     }
 }
 
-GAME_API void game_render(euengine::engine_context* ctx)
+GAME_API void game_render(egen::engine_context* ctx)
 {
     [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(ctx->profiler, "game_render");
@@ -254,7 +254,7 @@ GAME_API void game_render(euengine::engine_context* ctx)
     scene::render(ctx);
 }
 
-GAME_API void game_ui(euengine::engine_context* ctx)
+GAME_API void game_ui(egen::engine_context* ctx)
 {
     [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(ctx->profiler, "game_ui");

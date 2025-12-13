@@ -17,7 +17,7 @@
 #include <stack>
 #include <unordered_map>
 
-namespace euengine
+namespace egen
 {
 
 namespace
@@ -1144,4 +1144,4 @@ std::span<const std::string_view> gltf_loader::extensions()
     return k_extensions;
 }
 
-} // namespace euengine
+} // namespace egen

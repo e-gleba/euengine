@@ -1,12 +1,12 @@
 """
-euengine Scene Scripting Demo
+egen Scene Scripting Demo
 
-This script demonstrates Python scripting capabilities for the euengine scene.
+This script demonstrates Python scripting capabilities for the egen scene.
 It creates a dynamic scene with animated models, color changes, and movement.
 """
 
 import math
-import euengine_scene as scene
+import egen_scene as scene
 
 # Global state for the demo
 demo_initialized = False

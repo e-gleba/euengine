@@ -2,7 +2,7 @@
 
 #include <string_view>
 
-namespace euengine::platform
+namespace egen::platform
 {
 
 enum class os : unsigned char
@@ -99,4 +99,4 @@ enum class os : unsigned char
 #endif
 }
 
-} // namespace euengine::platform
+} // namespace egen::platform

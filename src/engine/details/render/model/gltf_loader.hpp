@@ -9,7 +9,7 @@
 #include <span>
 #include <string_view>
 
-namespace euengine
+namespace egen
 {
 
 /// glTF 2.0 file format loader (internal implementation)
@@ -36,4 +36,4 @@ private:
                                                                     ".glb" };
 };
 
-} // namespace euengine
+} // namespace egen

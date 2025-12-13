@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace euengine
+namespace egen
 {
 
 /// Vertex with position, normal, texture coordinates, and optional
@@ -282,4 +282,4 @@ public:
         const = 0;
 };
 
-} // namespace euengine
+} // namespace egen

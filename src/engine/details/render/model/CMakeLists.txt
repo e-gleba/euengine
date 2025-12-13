@@ -21,4 +21,4 @@ target_link_libraries(
     PRIVATE warnings glm spdlog fastgltf engine_interface
 )
 
-add_library(euengine::model ALIAS model_system)
+add_library(egen::model ALIAS model_system)

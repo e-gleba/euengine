@@ -10,7 +10,7 @@
 #include <filesystem>
 #include <string>
 
-namespace euengine
+namespace egen
 {
 
 /// GPU texture data with sampler
@@ -57,4 +57,4 @@ struct texture_data final
 /// @param tex Texture data to release (will be zeroed after release)
 void release_texture(SDL_GPUDevice* device, texture_data& tex);
 
-} // namespace euengine
+} // namespace egen

@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace euengine
+namespace egen
 {
 
 // Forward declarations
@@ -330,4 +330,4 @@ private:
     i_profiler* profiler_ = nullptr;
 };
 
-} // namespace euengine
+} // namespace egen

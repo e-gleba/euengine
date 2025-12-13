@@ -47,7 +47,7 @@ void process_input()
         return;
     }
 
-    auto& cam = g_ctx->registry->get<euengine::camera_component>(g_camera);
+    auto& cam = g_ctx->registry->get<egen::camera_component>(g_camera);
 
     // Allow escape to release mouse even when not captured
     if ((g_ctx->input.keyboard != nullptr) &&
@@ -199,7 +199,7 @@ void animate(float t, float dt)
 
 } // namespace
 
-void init(euengine::engine_context* ctx)
+void init(egen::engine_context* ctx)
 {
     g_ctx = ctx;
 
@@ -224,9 +224,9 @@ void init(euengine::engine_context* ctx)
     }
 
     g_camera = ctx->registry->create();
-    ctx->registry->emplace<euengine::camera_component>(
+    ctx->registry->emplace<egen::camera_component>(
         g_camera,
-        euengine::camera_component {
+        egen::camera_component {
             .position   = { 0.0f, 4.0f, 16.0f },
             .yaw        = -90.0f,
             .pitch      = -8.0f,
@@ -242,7 +242,7 @@ void init(euengine::engine_context* ctx)
     scan_audio();
     scan_scenes();
 
-    ctx->render_system->set_render_mode(euengine::render_mode::textured);
+    ctx->render_system->set_render_mode(egen::render_mode::textured);
     apply_sky();
 
     ui::log(2,
@@ -254,7 +254,7 @@ void shutdown()
 {
     for (auto& m : g_models)
     {
-        if (m.handle != euengine::invalid_model &&
+        if (m.handle != egen::invalid_model &&
             (g_ctx->render_system != nullptr))
         {
             g_ctx->render_system->unload_model(m.handle);
@@ -264,8 +264,7 @@ void shutdown()
 
     for (auto& a : g_audio)
     {
-        if (a.handle != euengine::invalid_music &&
-            (g_ctx->audio_system != nullptr))
+        if (a.handle != egen::invalid_music && (g_ctx->audio_system != nullptr))
         {
             g_ctx->audio_system->unload_music(a.handle);
         }
@@ -274,19 +273,19 @@ void shutdown()
 
     for (auto h : g_grids)
     {
-        if (h != euengine::invalid_mesh && (g_ctx->render_system != nullptr))
+        if (h != egen::invalid_mesh && (g_ctx->render_system != nullptr))
         {
             g_ctx->render_system->destroy_mesh(h);
         }
     }
     g_grids.clear();
 
-    if (g_origin_axis != euengine::invalid_mesh &&
+    if (g_origin_axis != egen::invalid_mesh &&
         (g_ctx->render_system != nullptr))
     {
         g_ctx->render_system->destroy_mesh(g_origin_axis);
     }
-    g_origin_axis = euengine::invalid_mesh;
+    g_origin_axis = egen::invalid_mesh;
 
     if (g_camera != entt::null && (g_ctx->registry != nullptr) &&
         g_ctx->registry->valid(g_camera))
@@ -298,7 +297,7 @@ void shutdown()
     g_ctx = nullptr;
 }
 
-void update(euengine::engine_context* ctx)
+void update(egen::engine_context* ctx)
 {
     [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(ctx->profiler, "scene::update");
@@ -330,14 +329,14 @@ void update(euengine::engine_context* ctx)
     ui::g_time = ctx->time.elapsed;
 
     ctx->render_system->set_render_mode(ui::g_wireframe
-                                            ? euengine::render_mode::wireframe
-                                            : euengine::render_mode::textured);
+                                            ? egen::render_mode::wireframe
+                                            : egen::render_mode::textured);
 
     process_input();
     animate(ctx->time.elapsed, ctx->time.delta);
 }
 
-void render(euengine::engine_context* ctx)
+void render(egen::engine_context* ctx)
 {
     [[maybe_unused]] auto profiler_zone =
         profiler_zone_begin(ctx->profiler, "scene::render");
@@ -350,7 +349,7 @@ void render(euengine::engine_context* ctx)
     }
 
     // Draw origin axis gizmo after grid so it appears on top
-    if (g_show_origin && g_origin_axis != euengine::invalid_mesh)
+    if (g_show_origin && g_origin_axis != egen::invalid_mesh)
     {
         ctx->render_system->draw(g_origin_axis);
     }
@@ -483,7 +482,7 @@ model_instance* add_model(const std::string& path,
 {
     std::filesystem::path model_path(path);
     auto                  handle = g_ctx->render_system->load_model(model_path);
-    if (handle == euengine::invalid_model)
+    if (handle == egen::invalid_model)
     {
         ui::log(4, "Failed to load: " + model_path.filename().string());
         return nullptr;
@@ -598,7 +597,7 @@ void focus_camera_on_object(int idx)
     }
 
     const auto& obj = g_models[static_cast<std::size_t>(idx)];
-    auto& cam = g_ctx->registry->get<euengine::camera_component>(g_camera);
+    auto&       cam = g_ctx->registry->get<egen::camera_component>(g_camera);
 
     // Get object position and size
     glm::vec3 obj_pos  = obj.transform.position;
@@ -650,7 +649,7 @@ void teleport_object_to_camera(int idx)
     }
 
     auto& obj = g_models[static_cast<std::size_t>(idx)];
-    auto& cam = g_ctx->registry->get<euengine::camera_component>(g_camera);
+    auto& cam = g_ctx->registry->get<egen::camera_component>(g_camera);
 
     // Teleport object to camera position (slightly in front)
     glm::vec3 forward = cam.front();
@@ -674,7 +673,7 @@ void rebuild_grid()
 {
     for (auto h : g_grids)
     {
-        if (h != euengine::invalid_mesh && (g_ctx->render_system != nullptr))
+        if (h != egen::invalid_mesh && (g_ctx->render_system != nullptr))
         {
             g_ctx->render_system->destroy_mesh(h);
         }
@@ -691,7 +690,7 @@ void rebuild_grid()
     // Create infinite origin axis gizmo (RGB = XYZ like Godot)
     // Make lines very long to appear infinite, and slightly above grid to avoid
     // z-fighting
-    if (g_origin_axis != euengine::invalid_mesh)
+    if (g_origin_axis != egen::invalid_mesh)
     {
         g_ctx->render_system->destroy_mesh(g_origin_axis);
     }
@@ -702,13 +701,13 @@ void rebuild_grid()
     const float axis_thickness = 0.05f; // Thickness of axis lines
 
     // Helper lambda to create a thick line segment as a quad
-    auto add_thick_line = [&](const glm::vec3&               start,
-                              const glm::vec3&               end,
-                              const glm::vec3&               color,
-                              const glm::vec3&               perp1,
-                              const glm::vec3&               perp2,
-                              std::vector<euengine::vertex>& verts,
-                              std::vector<uint16_t>&         indices)
+    auto add_thick_line = [&](const glm::vec3&           start,
+                              const glm::vec3&           end,
+                              const glm::vec3&           color,
+                              const glm::vec3&           perp1,
+                              const glm::vec3&           perp2,
+                              std::vector<egen::vertex>& verts,
+                              std::vector<uint16_t>&     indices)
     {
         const glm::vec3 half_thick1 = perp1 * (axis_thickness * 0.5f);
         const glm::vec3 half_thick2 = perp2 * (axis_thickness * 0.5f);
@@ -767,8 +766,8 @@ void rebuild_grid()
         indices.push_back(base_idx + 0);
     };
 
-    std::vector<euengine::vertex> axis_verts;
-    std::vector<uint16_t>         axis_indices;
+    std::vector<egen::vertex> axis_verts;
+    std::vector<uint16_t>     axis_indices;
 
     // X axis - Red (positive and negative)
     const glm::vec3 x_start_pos = { 0.0f, axis_y_offset, 0.0f };
@@ -828,7 +827,7 @@ void rebuild_grid()
                    axis_indices);
 
     g_origin_axis = g_ctx->render_system->create_mesh(
-        axis_verts, axis_indices, euengine::primitive_type::triangles);
+        axis_verts, axis_indices, egen::primitive_type::triangles);
 }
 
 } // namespace scene

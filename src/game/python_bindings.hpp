@@ -16,6 +16,6 @@ void shutdown_python();
 void bind_scene_api();
 void run_script(const std::string& script_path);
 void update_scripts(float elapsed, float delta);
-void set_context(euengine::engine_context* ctx);
+void set_context(egen::engine_context* ctx);
 
 } // namespace python_scripting

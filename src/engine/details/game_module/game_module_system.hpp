@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <memory>
 
-namespace euengine
+namespace egen
 {
 
 /// Game module system - handles loading/unloading of game shared libraries
@@ -64,4 +64,4 @@ private:
     std::unique_ptr<impl> pimpl_;
 };
 
-} // namespace euengine
+} // namespace egen

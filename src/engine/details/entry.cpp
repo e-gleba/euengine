@@ -16,11 +16,10 @@ namespace
 
 struct app_state final
 {
-    std::unique_ptr<euengine::engine> eng;
-    euengine::preinit_settings        settings =
-        euengine::preinit_settings::defaults();
-    std::filesystem::path game_lib_path;
-    bool                  game_loaded = false;
+    std::unique_ptr<egen::engine> eng;
+    egen::preinit_settings        settings = egen::preinit_settings::defaults();
+    std::filesystem::path         game_lib_path;
+    bool                          game_loaded = false;
 };
 
 [[nodiscard]] std::filesystem::path get_game_library_path() noexcept
@@ -35,7 +34,7 @@ struct app_state final
     try
     {
         return std::filesystem::path { base_path } /
-               euengine::platform::game_library_name();
+               egen::platform::game_library_name();
     }
     catch (const std::exception& e)
     {
@@ -45,20 +44,20 @@ struct app_state final
     return {};
 }
 
-[[nodiscard]] euengine::preinit_result try_game_preinit(
-    const std::filesystem::path& path, euengine::preinit_settings* settings)
+[[nodiscard]] egen::preinit_result try_game_preinit(
+    const std::filesystem::path& path, egen::preinit_settings* settings)
 {
     if (!std::filesystem::exists(path))
     {
         spdlog::warn("game library not found: {}", path.string());
-        return euengine::preinit_result::skip;
+        return egen::preinit_result::skip;
     }
 
     auto* shared_object = SDL_LoadObject(path.c_str());
     if (shared_object == nullptr)
     {
         spdlog::error("failed to load game library: {}", SDL_GetError());
-        return euengine::preinit_result::skip;
+        return egen::preinit_result::skip;
     }
 
     struct so_guard final
@@ -67,7 +66,7 @@ struct app_state final
         ~so_guard() noexcept { SDL_UnloadObject(p); }
     } lib { shared_object };
 
-    auto* preinit_fn = reinterpret_cast<euengine::game_preinit_fn>(
+    auto* preinit_fn = reinterpret_cast<egen::game_preinit_fn>(
         SDL_LoadFunction(shared_object, "game_preinit"));
 
     if (preinit_fn == nullptr)
@@ -75,7 +74,7 @@ struct app_state final
         spdlog::error("failed to load game preinit funtion in '{}': {}",
                       path.string(),
                       SDL_GetError());
-        return euengine::preinit_result::skip;
+        return egen::preinit_result::skip;
     }
 
     spdlog::info("calling game preinit");
@@ -94,12 +93,12 @@ SDL_AppResult SDL_AppInit(void**                 appstate,
     *appstate   = state;
 
     // Set default window settings
-    state->settings.window = euengine::window_settings {
-        .title     = "euengine",
+    state->settings.window = egen::window_settings {
+        .title     = "egen",
         .width     = 1280,
         .height    = 720,
-        .mode      = euengine::window_mode::windowed,
-        .vsync     = euengine::vsync_mode::enabled,
+        .mode      = egen::window_mode::windowed,
+        .vsync     = egen::vsync_mode::enabled,
         .resizable = true,
         .high_dpi  = true,
     };
@@ -111,18 +110,18 @@ SDL_AppResult SDL_AppInit(void**                 appstate,
 
     switch (preinit_result)
     {
-        case euengine::preinit_result::quit:
+        case egen::preinit_result::quit:
             spdlog::info("game_preinit requested quit");
             delete state;
             *appstate = nullptr;
             return SDL_APP_FAILURE;
 
-        case euengine::preinit_result::skip:
+        case egen::preinit_result::skip:
             spdlog::info("game will not be loaded");
             state->game_loaded = false;
             break;
 
-        case euengine::preinit_result::ok:
+        case egen::preinit_result::ok:
             state->game_loaded = true;
             break;
     }
@@ -135,7 +134,7 @@ SDL_AppResult SDL_AppInit(void**                 appstate,
         return SDL_APP_FAILURE;
     }
 
-    state->eng = std::make_unique<euengine::engine>();
+    state->eng = std::make_unique<egen::engine>();
 
     if (!state->eng->init(state->settings))
     {

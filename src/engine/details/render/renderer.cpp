@@ -14,7 +14,7 @@
 #include <cstring>
 #include <ranges>
 
-namespace euengine
+namespace egen
 {
 
 namespace
@@ -1279,7 +1279,7 @@ std::filesystem::path Renderer::find_texture_for_model(
 
 texture_handle Renderer::load_texture(const std::filesystem::path& path)
 {
-    auto result = euengine::load_texture(device_, path, true);
+    auto result = egen::load_texture(device_, path, true);
     if (!result)
     {
         spdlog::error("== texture {}: {}", path.string(), result.error());
@@ -1794,4 +1794,4 @@ void Renderer::set_texture_filter(texture_filter filter)
                                                     : "Trilinear");
 }
 
-} // namespace euengine
+} // namespace egen

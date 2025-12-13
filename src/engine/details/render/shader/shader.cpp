@@ -7,7 +7,7 @@
 #include <sstream>
 #include <utility>
 
-namespace euengine
+namespace egen
 {
 
 ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept
@@ -335,4 +335,4 @@ void shader_system::release_all() noexcept
     programs_.clear();
 }
 
-} // namespace euengine
+} // namespace egen

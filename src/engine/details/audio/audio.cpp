@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-namespace euengine
+namespace egen
 {
 
 audio_system::~audio_system()
@@ -251,4 +251,4 @@ void audio_system::set_sound_volume(float volume)
     sound_volume = std::clamp(volume, 0.0f, 1.0f);
 }
 
-} // namespace euengine
+} // namespace egen

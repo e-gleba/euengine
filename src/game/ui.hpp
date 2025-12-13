@@ -55,6 +55,6 @@ void log_clear();
 
 void init();
 void draw_file_dialog();
-void draw(euengine::engine_context* ctx);
+void draw(egen::engine_context* ctx);
 
 } // namespace ui

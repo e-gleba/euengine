@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <span>
 
-namespace euengine
+namespace egen
 {
 
 // Forward declaration
@@ -137,4 +137,4 @@ public:
     virtual void               enable_hot_reload(bool enable) = 0;
 };
 
-} // namespace euengine
+} // namespace egen

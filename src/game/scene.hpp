@@ -10,41 +10,41 @@ namespace scene
 
 struct model_instance
 {
-    euengine::model_handle handle = euengine::invalid_model;
-    std::string            name;
-    std::string            path;
-    euengine::transform    transform;
-    euengine::bounds       bounds;
-    bool                   animate     = false;
-    float                  anim_speed  = 25.0f;
-    bool                   hover       = false;
-    float                  hover_base  = 0.0f;
-    float                  hover_speed = 1.5f;
-    float                  hover_range = 0.2f;
-    bool                   moving      = false; // Moving along path
-    float                  move_speed  = 0.5f;
-    float                  move_path   = 0.0f; // Position along path (0-1)
-    float     move_dir   = 1.0f; // Direction: 1.0 forward, -1.0 backward
-    glm::vec3 move_start = {};
-    glm::vec3 move_end   = {};
+    egen::model_handle handle = egen::invalid_model;
+    std::string        name;
+    std::string        path;
+    egen::transform    transform;
+    egen::bounds       bounds;
+    bool               animate     = false;
+    float              anim_speed  = 25.0f;
+    bool               hover       = false;
+    float              hover_base  = 0.0f;
+    float              hover_speed = 1.5f;
+    float              hover_range = 0.2f;
+    bool               moving      = false; // Moving along path
+    float              move_speed  = 0.5f;
+    float              move_path   = 0.0f; // Position along path (0-1)
+    float              move_dir = 1.0f; // Direction: 1.0 forward, -1.0 backward
+    glm::vec3          move_start = {};
+    glm::vec3          move_end   = {};
     glm::vec3 color_tint = { 1.0f, 1.0f, 1.0f }; // Color tint (white = no tint)
 };
 
 struct audio_file
 {
-    euengine::music_handle handle = euengine::invalid_music;
-    std::string            name;
-    std::string            path;
-    bool                   is_sfx   = false;
-    float                  duration = 0.0f;
+    egen::music_handle handle = egen::invalid_music;
+    std::string        name;
+    std::string        path;
+    bool               is_sfx   = false;
+    float              duration = 0.0f;
 };
 
 // State
-inline euengine::engine_context*          g_ctx = nullptr;
-inline std::vector<euengine::mesh_handle> g_grids;
-inline euengine::mesh_handle g_origin_axis = euengine::invalid_mesh;
-inline bool                  g_show_origin = true;
-inline entt::entity          g_camera      = entt::null;
+inline egen::engine_context*          g_ctx = nullptr;
+inline std::vector<egen::mesh_handle> g_grids;
+inline egen::mesh_handle              g_origin_axis = egen::invalid_mesh;
+inline bool                           g_show_origin = true;
+inline entt::entity                   g_camera      = entt::null;
 
 inline std::vector<model_instance> g_models;
 inline int g_selected = -1; // Primary selection (for backward compatibility)
@@ -72,10 +72,10 @@ inline float g_min_fps          = 999.0f;
 inline float g_max_fps          = 0.0f;
 inline float g_avg_fps          = 0.0f;
 
-void init(euengine::engine_context* ctx);
+void init(egen::engine_context* ctx);
 void shutdown();
-void update(euengine::engine_context* ctx);
-void render(euengine::engine_context* ctx);
+void update(egen::engine_context* ctx);
+void render(egen::engine_context* ctx);
 
 void            scan_models();
 void            scan_audio();

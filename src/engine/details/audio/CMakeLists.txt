@@ -14,4 +14,4 @@ target_link_libraries(
     PRIVATE engine_interface warnings spdlog SDL3_mixer::SDL3_mixer-static
 )
 
-add_library(euengine::audio ALIAS audio_system)
+add_library(egen::audio ALIAS audio_system)

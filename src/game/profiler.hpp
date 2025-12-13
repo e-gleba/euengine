@@ -2,7 +2,7 @@
 
 #include <core-api/profiler.hpp>
 
-namespace euengine
+namespace egen
 {
 
 /// Factory function to create a profiler instance
@@ -11,4 +11,4 @@ namespace euengine
 /// This function is implemented in profiler.cpp (separate compile unit)
 i_profiler* create_profiler() noexcept;
 
-} // namespace euengine
+} // namespace egen

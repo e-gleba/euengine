@@ -7,7 +7,7 @@
 
 #include <SDL3/SDL_gpu.h>
 
-namespace euengine
+namespace egen
 {
 
 // PIMPL implementation to hide Renderer class
@@ -268,4 +268,4 @@ void render_system::set_view_projection(const glm::mat4& vp)
     pimpl_->set_view_projection(vp);
 }
 
-} // namespace euengine
+} // namespace egen

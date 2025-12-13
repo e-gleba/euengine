@@ -17,13 +17,13 @@ bool                                    g_python_initialized = false;
 std::unique_ptr<py::scoped_interpreter> g_python_interpreter;
 
 // Global context pointer for Python callbacks
-euengine::engine_context* g_ctx = nullptr;
+egen::engine_context* g_ctx = nullptr;
 
 // Python module instance
 py::module_ g_scene_module;
 
 // Create the embedded module using PYBIND11_EMBEDDED_MODULE
-PYBIND11_EMBEDDED_MODULE(euengine_scene, m)
+PYBIND11_EMBEDDED_MODULE(egen_scene, m)
 {
     (void)m; // Module will be populated in bind_scene_api()
     // We just create the module structure here
@@ -61,7 +61,7 @@ void bind_scene_api()
     }
 
     // Import the embedded module we created with PYBIND11_EMBEDDED_MODULE
-    g_scene_module = py::module_::import("euengine_scene");
+    g_scene_module = py::module_::import("egen_scene");
 
     // Bind glm::vec3
     py::class_<glm::vec3>(g_scene_module, "Vec3")
@@ -78,11 +78,11 @@ void bind_scene_api()
              });
 
     // Bind transform
-    py::class_<euengine::transform>(g_scene_module, "Transform")
+    py::class_<egen::transform>(g_scene_module, "Transform")
         .def(py::init<>())
-        .def_readwrite("position", &euengine::transform::position)
-        .def_readwrite("rotation", &euengine::transform::rotation)
-        .def_readwrite("scale", &euengine::transform::scale);
+        .def_readwrite("position", &egen::transform::position)
+        .def_readwrite("rotation", &egen::transform::rotation)
+        .def_readwrite("scale", &egen::transform::scale);
 
     // Scene API functions
     g_scene_module.def(
@@ -452,7 +452,7 @@ void update_scripts(float elapsed, float delta)
     }
 }
 
-void set_context(euengine::engine_context* ctx)
+void set_context(egen::engine_context* ctx)
 {
     g_ctx = ctx;
 }

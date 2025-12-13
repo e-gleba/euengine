@@ -5,7 +5,7 @@
 #include <cctype>
 #include <ranges>
 
-namespace euengine
+namespace egen
 {
 
 // PIMPL implementation
@@ -77,4 +77,4 @@ std::span<const std::string_view> model_system::extensions() const
     return pimpl_->extensions();
 }
 
-} // namespace euengine
+} // namespace egen

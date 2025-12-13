@@ -5,7 +5,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
 
-namespace euengine
+namespace egen
 {
 
 /// ImGui-based UI layer implementation
@@ -47,4 +47,4 @@ private:
     bool                 input_enabled_ = true;
 };
 
-} // namespace euengine
+} // namespace egen

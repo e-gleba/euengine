@@ -14,4 +14,4 @@ target_link_libraries(
     PRIVATE engine_interface warnings spdlog EnTT::EnTT SDL3::SDL3-static
 )
 
-add_library(euengine::game_module ALIAS game_module_system)
+add_library(egen::game_module ALIAS game_module_system)

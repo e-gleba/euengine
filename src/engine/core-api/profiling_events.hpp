@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <mutex>
 
-namespace euengine
+namespace egen
 {
 
 /// Profiling event types - similar to SDL3 event system
@@ -223,4 +223,4 @@ public:
     }
 };
 
-} // namespace euengine
+} // namespace egen

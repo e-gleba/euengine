@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 
-namespace euengine
+namespace egen
 {
 
 using music_handle = std::uint64_t;
@@ -37,4 +37,4 @@ struct i_audio
     [[nodiscard]] virtual float get_sound_volume() const             = 0;
 };
 
-} // namespace euengine
+} // namespace egen

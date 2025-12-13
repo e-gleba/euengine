@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <string_view>
 
-namespace euengine
+namespace egen
 {
 
 // Forward declaration
@@ -117,4 +117,4 @@ public:
         const noexcept = 0;
 };
 
-} // namespace euengine
+} // namespace egen

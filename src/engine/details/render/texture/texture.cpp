@@ -6,7 +6,7 @@
 #include <cstring>
 #include <format>
 
-namespace euengine
+namespace egen
 {
 
 std::expected<texture_data, std::string> load_texture(
@@ -275,4 +275,4 @@ void release_texture(SDL_GPUDevice* device, texture_data& tex)
     tex = {};
 }
 
-} // namespace euengine
+} // namespace egen

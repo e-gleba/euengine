@@ -12,7 +12,7 @@ struct SDL_GPUCommandBuffer;
 struct SDL_GPURenderPass;
 struct SDL_GPUTexture;
 
-namespace euengine
+namespace egen
 {
 
 // Forward declarations
@@ -146,4 +146,4 @@ private:
     std::unique_ptr<impl> pimpl_;
 };
 
-} // namespace euengine
+} // namespace egen
