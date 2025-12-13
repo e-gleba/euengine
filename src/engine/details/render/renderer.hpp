@@ -3,9 +3,9 @@
 /// @file render.hpp
 /// @brief GPU renderer with mesh and model management
 
-#include "../model/model_system.hpp"
 #include "core-api/profiler.hpp"
 #include "core-api/renderer.hpp"
+#include "model/model_system.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>

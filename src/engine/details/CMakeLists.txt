@@ -8,7 +8,6 @@ set_target_properties(
     PROPERTIES CXX_STANDARD 26 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
 )
 
-add_subdirectory(model)
 add_subdirectory(audio)
 add_subdirectory(game_module)
 add_subdirectory(render)
@@ -17,7 +16,6 @@ target_link_libraries(
     engine
     PRIVATE
         engine_interface
-        euengine::model
         euengine::audio
         euengine::game_module
         euengine::render

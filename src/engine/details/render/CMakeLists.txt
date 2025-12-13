@@ -1,6 +1,7 @@
-# Add texture and shader subdirectories
+# Add texture, shader, and model subdirectories
 add_subdirectory(texture)
 add_subdirectory(shader)
+add_subdirectory(model)
 
 # Only include .cpp files in this directory, not subdirectories
 file(GLOB src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
@@ -18,9 +19,9 @@ target_link_libraries(
     renderer_manager
     PRIVATE
         engine_interface
-        euengine::model
         euengine::texture
         euengine::shader
+        euengine::model
         warnings
         glm
         spdlog
