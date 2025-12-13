@@ -1,5 +1,6 @@
 #include "engine.hpp"
 #include "audio/audio.hpp"
+#include "game_module/game_module_manager.hpp"
 #include "imgui_layer.hpp"
 #include "render.hpp"
 #include "shader.hpp"
@@ -186,6 +187,9 @@ bool engine::init(const preinit_settings& settings)
         spdlog::warn("audio init failed, continuing without audio");
     }
 
+    // Initialize game module manager
+    game_module_ = std::make_unique<game_module_manager>();
+
     // Apply audio settings
     if (audio_)
     {
@@ -226,22 +230,11 @@ void engine::shutdown() noexcept
 
     spdlog::info("=> engine shutdown");
 
-    // Shutdown game first
-    if (game_shutdown_ != nullptr)
+    // Shutdown game module first
+    if (game_module_ != nullptr)
     {
-        try
-        {
-            game_shutdown_();
-        }
-        catch (...)
-        {
-            // Ignore exceptions during shutdown
-        }
-        spdlog::default_logger()->flush();
+        game_module_->unload(&registry_);
     }
-    registry_.clear();
-    cleanup_game_pointers();
-    game_lib_.reset();
 
     // Shutdown subsystems in reverse order
     audio_.reset();
@@ -516,135 +509,30 @@ float engine::get_master_volume() const noexcept
 
 bool engine::load_game(const std::filesystem::path& path)
 {
-    spdlog::info("=> loading game: {}", path.string());
-    game_lib_path_ = path;
-
-    // For hot-reload to work, we must copy the DLL to a temp location
-    // Otherwise the dynamic loader caches the old version
-    std::filesystem::path load_path = path;
-
-    if (std::filesystem::exists(path))
+    if (game_module_ == nullptr)
     {
-        // Create temp copy with timestamp to ensure unique name
-        auto temp_dir = std::filesystem::temp_directory_path();
-        auto timestamp =
-            std::chrono::steady_clock::now().time_since_epoch().count();
-        auto temp_name = std::format(
-            "game_{}_{}{}", timestamp, std::rand(), path.extension().string());
-        auto temp_path = temp_dir / temp_name;
-
-        std::error_code ec;
-        std::filesystem::copy_file(
-            path,
-            temp_path,
-            std::filesystem::copy_options::overwrite_existing,
-            ec);
-
-        if (!ec)
-        {
-            load_path       = temp_path;
-            game_temp_path_ = temp_path; // Store for cleanup
-            spdlog::debug("=> copied game lib to: {}", temp_path.string());
-        }
-        else
-        {
-            spdlog::warn("=> failed to copy game lib: {}", ec.message());
-        }
-    }
-
-    auto* raw_lib = SDL_LoadObject(load_path.c_str());
-    if (raw_lib == nullptr)
-    {
-        spdlog::error("SDL_LoadObject: {}", SDL_GetError());
         return false;
     }
-    game_lib_.reset(raw_lib);
-
-    // Load function pointers (preinit is optional for hot-reload)
-    game_preinit_ = reinterpret_cast<game_preinit_fn>(
-        SDL_LoadFunction(raw_lib, "game_preinit"));
-    game_init_ =
-        reinterpret_cast<game_init_fn>(SDL_LoadFunction(raw_lib, "game_init"));
-    game_shutdown_ = reinterpret_cast<game_shutdown_fn>(
-        SDL_LoadFunction(raw_lib, "game_shutdown"));
-    game_update_ = reinterpret_cast<game_update_fn>(
-        SDL_LoadFunction(raw_lib, "game_update"));
-    game_render_ = reinterpret_cast<game_render_fn>(
-        SDL_LoadFunction(raw_lib, "game_render"));
-    game_ui_ =
-        reinterpret_cast<game_ui_fn>(SDL_LoadFunction(raw_lib, "game_ui"));
-
-    // Verify all required exports are present (preinit is optional)
-    if ((game_init_ == nullptr) || (game_shutdown_ == nullptr) ||
-        (game_update_ == nullptr) || (game_render_ == nullptr) ||
-        (game_ui_ == nullptr))
-    {
-        spdlog::error("missing game exports");
-        cleanup_game_pointers();
-        game_lib_.reset();
-        return false;
-    }
-
     update_context();
-    if (!game_init_(&context_))
-    {
-        cleanup_game_pointers();
-        game_lib_.reset();
-        return false;
-    }
-    return true;
+    return game_module_->load(path, &context_);
 }
 
 void engine::unload_game() noexcept
 {
-    if (game_shutdown_ != nullptr)
+    if (game_module_ != nullptr)
     {
-        try
-        {
-            game_shutdown_();
-        }
-        catch (...)
-        {
-        }
-        spdlog::default_logger()->flush();
-    }
-    registry_.clear();
-    cleanup_game_pointers();
-    game_lib_.reset();
-
-    // Cleanup temp file after unloading the library
-    if (!game_temp_path_.empty())
-    {
-        std::error_code ec;
-        std::filesystem::remove(game_temp_path_, ec);
-        if (ec)
-        {
-            spdlog::debug("=> failed to remove temp game lib: {}",
-                          ec.message());
-        }
-        game_temp_path_.clear();
+        game_module_->unload(&registry_);
     }
 }
 
 [[nodiscard]] bool engine::reload_game() noexcept
 {
-    if (game_lib_path_.empty())
+    if (game_module_ == nullptr || !game_module_->is_loaded())
     {
         return false;
     }
-    auto path = game_lib_path_;
-    unload_game();
-    return load_game(path);
-}
-
-void engine::cleanup_game_pointers() noexcept
-{
-    game_preinit_  = nullptr;
-    game_init_     = nullptr;
-    game_shutdown_ = nullptr;
-    game_update_   = nullptr;
-    game_render_   = nullptr;
-    game_ui_       = nullptr;
+    update_context();
+    return game_module_->reload(&context_);
 }
 
 void engine::update_context() noexcept
@@ -1112,9 +1000,9 @@ void engine::update()
     }
 
     update_context();
-    if (game_update_ != nullptr)
+    if (game_module_ != nullptr)
     {
-        game_update_(&context_);
+        game_module_->call_update(&context_);
     }
 }
 
@@ -1255,9 +1143,9 @@ void engine::render()
             }
 
             renderer_->bind_pipeline();
-            if (game_render_ != nullptr)
+            if (game_module_ != nullptr)
             {
-                game_render_(&context_);
+                game_module_->call_render(&context_);
             }
 
             renderer_->end_frame();
@@ -1288,9 +1176,9 @@ void engine::render()
         [[maybe_unused]] auto profiler_zone_imgui =
             profiler_zone_begin(context_.profiler, "engine::render::imgui");
         imgui_layer_->begin_frame();
-        if (game_ui_ != nullptr)
+        if (game_module_ != nullptr)
         {
-            game_ui_(&context_);
+            game_module_->call_ui(&context_);
         }
         imgui_layer_->end_frame(cmd, swapchain);
     }

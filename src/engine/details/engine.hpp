@@ -9,7 +9,6 @@
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
-#include <SDL3/SDL_loadso.h>
 #include <entt/entt.hpp>
 
 #include <filesystem>
@@ -25,6 +24,7 @@ class ShaderManager;
 class ImGuiLayer;
 class Renderer;
 class audio_manager;
+class game_module_manager;
 
 /// RAII deleter for SDL_Window
 struct sdl_window_deleter final
@@ -252,21 +252,11 @@ private:
     std::string        gpu_driver_name_;
 
     // Subsystems
-    std::unique_ptr<ShaderManager> shader_manager_;
-    std::unique_ptr<ImGuiLayer>    imgui_layer_;
-    std::unique_ptr<Renderer>      renderer_;
-    std::unique_ptr<audio_manager> audio_;
-
-    // Game library hot-loading
-    sdl_shared_object_ptr game_lib_;
-    std::filesystem::path game_lib_path_;
-    std::filesystem::path game_temp_path_; // Temp copy for hot-reload
-    game_preinit_fn       game_preinit_  = nullptr;
-    game_init_fn          game_init_     = nullptr;
-    game_shutdown_fn      game_shutdown_ = nullptr;
-    game_update_fn        game_update_   = nullptr;
-    game_render_fn        game_render_   = nullptr;
-    game_ui_fn            game_ui_       = nullptr;
+    std::unique_ptr<ShaderManager>       shader_manager_;
+    std::unique_ptr<ImGuiLayer>          imgui_layer_;
+    std::unique_ptr<Renderer>            renderer_;
+    std::unique_ptr<audio_manager>       audio_;
+    std::unique_ptr<game_module_manager> game_module_;
 
     // Frame timing
     Uint64   last_time_    = 0;
