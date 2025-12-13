@@ -70,8 +70,7 @@ cpmaddpackage(
     "STEAMAUDIO_ENABLE_TRUEAUDIONEXT OFF"
 )
 
-# fix module path after fetch
 if(steamaudio_ADDED)
-    message(FATAL_ERROR ${steamaudio_SOURCE_DIR})
+    message(FATAL_ERROR "todo: fix module path after fetch")
     list(APPEND CMAKE_MODULE_PATH "${steamaudio_SOURCE_DIR}/build")
 endif()

@@ -56,3 +56,4 @@ find_package(pybind CONFIG REQUIRED)
 find_package(cpm_tracy CONFIG REQUIRED)
 find_package(cpm_fastgltf CONFIG REQUIRED)
 find_package(cpm_gsl CONFIG REQUIRED)
+#find_package(steam_audio CONFIG REQUIRED) # see todo
