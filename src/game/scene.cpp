@@ -1,4 +1,8 @@
 #include "scene.hpp"
+
+// Suppress deprecated warnings for legacy context members
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "ui.hpp"
 
 #include <algorithm>
@@ -826,3 +830,5 @@ void rebuild_grid()
 }
 
 } // namespace scene
+
+#pragma GCC diagnostic pop

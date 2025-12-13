@@ -195,20 +195,37 @@ bool engine::init(const preinit_settings& settings)
     // Apply background color from settings
     background_ = settings.background;
 
-    // Setup engine context for game
-    context_.registry = &registry_;
-    context_.renderer =
+    // Setup engine context for game - set subsystem interfaces
+    context_.registry_ = &registry_;
+    context_.render_system_ =
         render_system_ != nullptr ? render_system_->get_renderer() : nullptr;
-    context_.shaders  = shader_system_.get();
-    context_.audio    = audio_system_.get();
-    context_.settings = this; // Engine implements i_engine_settings
-    context_.profiler =
+    context_.shader_system_      = shader_system_.get();
+    context_.audio_system_       = audio_system_.get();
+    context_.overlay_layer_      = overlay_layer_.get();
+    context_.game_module_system_ = game_module_system_.get();
+    context_.settings_           = this; // Engine implements i_engine_settings
+    context_.profiler_ =
         nullptr; // Will be set by game module if profiling is enabled
+    context_.model_loader_ =
+        nullptr; // Model loading is handled by renderer internally
+
     // Get ImGui context from UI layer (if it's an imgui_layer)
     if (auto* imgui = dynamic_cast<imgui_layer*>(overlay_layer_.get()))
     {
-        context_.imgui_ctx = imgui->get_imgui_context();
+        context_.imgui_ctx_ = imgui->get_imgui_context();
     }
+
+// Legacy compatibility - set deprecated members (suppress warnings)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    context_.registry  = &registry_;
+    context_.renderer  = context_.render_system_;
+    context_.shaders   = shader_system_.get();
+    context_.audio     = audio_system_.get();
+    context_.settings  = this;
+    context_.profiler  = nullptr;
+    context_.imgui_ctx = context_.imgui_ctx_;
+#pragma GCC diagnostic pop
     context_.background = &background_;
 
     // Initialize timing
@@ -553,6 +570,26 @@ void engine::update_context() noexcept
     context_.time.elapsed     = elapsed_time_;
     context_.time.frame_count = frame_count_;
     context_.time.fps         = smoothed_fps_;
+
+    // Update subsystem pointers (in case they changed)
+    context_.render_system_ =
+        render_system_ != nullptr ? render_system_->get_renderer() : nullptr;
+    context_.shader_system_      = shader_system_.get();
+    context_.audio_system_       = audio_system_.get();
+    context_.overlay_layer_      = overlay_layer_.get();
+    context_.game_module_system_ = game_module_system_.get();
+    context_.settings_           = this;
+    context_.registry_           = &registry_;
+
+// Legacy compatibility (suppress warnings)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    context_.renderer = context_.render_system_;
+    context_.shaders  = context_.shader_system_;
+    context_.audio    = context_.audio_system_;
+    context_.settings = context_.settings_;
+    context_.registry = context_.registry_;
+#pragma GCC diagnostic pop
 
     // Update key sequence string for display
     key_sequence_string_.clear();
@@ -958,7 +995,7 @@ bool engine::process_event(const SDL_Event& event)
 void engine::update()
 {
     [[maybe_unused]] auto profiler_zone =
-        profiler_zone_begin(context_.profiler, "engine::update");
+        profiler_zone_begin(context_.get_profiler(), "engine::update");
 
     // Update camera components using ranges
     auto camera_view = registry_.view<camera_component>();
@@ -1011,7 +1048,7 @@ void engine::update()
 void engine::render()
 {
     [[maybe_unused]] auto profiler_zone =
-        profiler_zone_begin(context_.profiler, "engine::render");
+        profiler_zone_begin(context_.get_profiler(), "engine::render");
 
     // Apply deferred VSync change before acquiring swapchain
     if (vsync_dirty_)
@@ -1134,8 +1171,8 @@ void engine::render()
     if (auto* pass = SDL_BeginGPURenderPass(cmd, &color_target, 1, depth_ptr))
     {
         {
-            [[maybe_unused]] auto profiler_zone_scene =
-                profiler_zone_begin(context_.profiler, "engine::render::scene");
+            [[maybe_unused]] auto profiler_zone_scene = profiler_zone_begin(
+                context_.get_profiler(), "engine::render::scene");
             render_system_->begin_frame(cmd, pass);
 
             // Set view projection from first camera
@@ -1162,7 +1199,7 @@ void engine::render()
     if (use_postprocess && render_system_->pp_color_target() != nullptr)
     {
         [[maybe_unused]] auto profiler_zone_postprocess = profiler_zone_begin(
-            context_.profiler, "engine::render::postprocess");
+            context_.get_profiler(), "engine::render::postprocess");
         postprocess_params pp_params {};
         pp_params.gamma        = gamma_;
         pp_params.brightness   = brightness_;
@@ -1178,8 +1215,8 @@ void engine::render()
 
     // Render ImGui
     {
-        [[maybe_unused]] auto profiler_zone_imgui =
-            profiler_zone_begin(context_.profiler, "engine::render::imgui");
+        [[maybe_unused]] auto profiler_zone_imgui = profiler_zone_begin(
+            context_.get_profiler(), "engine::render::imgui");
         overlay_layer_->begin_frame();
         if (game_module_system_ != nullptr)
         {
@@ -1203,7 +1240,7 @@ void engine::render()
 void engine::iterate()
 {
     [[maybe_unused]] auto profiler_zone =
-        profiler_zone_begin(context_.profiler, "engine::iterate");
+        profiler_zone_begin(context_.get_profiler(), "engine::iterate");
 
     const Uint64 freq = SDL_GetPerformanceFrequency();
     const Uint64 now  = SDL_GetPerformanceCounter();
@@ -1294,9 +1331,9 @@ void engine::iterate()
     {
         profiling_event_dispatcher::emit_frame_mark();
 
-        if (context_.profiler != nullptr)
+        if (auto* profiler = context_.get_profiler(); profiler != nullptr)
         {
-            context_.profiler->mark_frame();
+            profiler->mark_frame();
         }
     }
 
@@ -1307,7 +1344,11 @@ void engine::iterate()
 
 void engine::set_profiler(i_profiler* profiler) noexcept
 {
-    context_.profiler = profiler;
+    context_.profiler_ = profiler;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    context_.profiler = profiler; // Legacy compatibility
+#pragma GCC diagnostic pop
     // Also set profiler on renderer for detailed zones
     if (render_system_ != nullptr)
     {
@@ -1330,7 +1371,7 @@ void engine::capture_frame_image(SDL_GPUTexture* texture,
                                  Uint32          height) noexcept
 {
     if (texture == nullptr || width == 0 || height == 0 ||
-        context_.profiler == nullptr)
+        context_.get_profiler() == nullptr)
     {
         return;
     }
@@ -1426,10 +1467,9 @@ void engine::capture_frame_image(SDL_GPUTexture* texture,
         profiling_event_dispatcher::emit_frame_image(
             pixels, capture_w, capture_h);
 
-        if (context_.profiler != nullptr)
+        if (auto* profiler = context_.get_profiler(); profiler != nullptr)
         {
-            context_.profiler->capture_frame_image(
-                pixels, capture_w, capture_h);
+            profiler->capture_frame_image(pixels, capture_w, capture_h);
         }
         SDL_UnmapGPUTransferBuffer(device_.get(), tb);
     }

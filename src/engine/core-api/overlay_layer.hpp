@@ -1,9 +1,13 @@
 #pragma once
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_gpu.h>
-
 #include <functional>
+
+// Forward declarations to avoid exposing SDL3 to game module
+struct SDL_Window;
+struct SDL_GPUDevice;
+typedef union SDL_Event SDL_Event; // SDL3 uses typedef union
+struct SDL_GPUCommandBuffer;
+struct SDL_GPUTexture;
 
 namespace euengine
 {

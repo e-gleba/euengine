@@ -273,6 +273,13 @@ public:
     /// @return Loaded model data on success, error message on failure
     [[nodiscard]] virtual load_result load(
         const std::filesystem::path& path) const = 0;
+
+    /// Check if this loader supports the given file extension
+    [[nodiscard]] virtual bool supports(std::string_view extension) const = 0;
+
+    /// Get supported extensions for this loader
+    [[nodiscard]] virtual std::span<const std::string_view> extensions()
+        const = 0;
 };
 
 } // namespace euengine
