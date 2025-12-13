@@ -19,7 +19,7 @@ namespace euengine
 {
 
 // Forward declarations
-class ShaderManager;
+class shader_system;
 
 /// GPU mesh data for wireframe rendering
 struct gpu_mesh final
@@ -95,8 +95,8 @@ public:
     Renderer(Renderer&&)                 = delete;
     Renderer& operator=(Renderer&&)      = delete;
 
-    /// Initialize renderer with GPU device and shader manager
-    [[nodiscard]] bool init(SDL_GPUDevice* device, ShaderManager* shaders);
+    /// Initialize renderer with GPU device and shader system
+    [[nodiscard]] bool init(SDL_GPUDevice* device, shader_system* shaders);
 
     /// Release all GPU resources
     void shutdown();
@@ -264,7 +264,7 @@ private:
 
     // GPU device (non-owning)
     SDL_GPUDevice* device_  = nullptr;
-    ShaderManager* shaders_ = nullptr;
+    shader_system* shaders_ = nullptr;
 
     // Pipelines
     SDL_GPUGraphicsPipeline* wireframe_pipeline_ = nullptr;

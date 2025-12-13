@@ -59,7 +59,7 @@ public:
     }
 
 private:
-    friend class ShaderManager;
+    friend class shader_system;
     SDL_GPUShader* vertex_shader_   = nullptr;
     SDL_GPUShader* fragment_shader_ = nullptr;
     SDL_GPUDevice* device_          = nullptr;
@@ -71,15 +71,15 @@ private:
     void           release() noexcept;
 };
 
-class ShaderManager final : public i_shader_manager
+class shader_system final : public i_shader_system
 {
 public:
     using ReloadCallback = std::function<void(const std::string&)>;
 
-    explicit ShaderManager(SDL_GPUDevice* device) noexcept;
-    ~ShaderManager() override;
-    ShaderManager(const ShaderManager&)            = delete;
-    ShaderManager& operator=(const ShaderManager&) = delete;
+    explicit shader_system(SDL_GPUDevice* device) noexcept;
+    ~shader_system() override;
+    shader_system(const shader_system&)            = delete;
+    shader_system& operator=(const shader_system&) = delete;
 
     [[nodiscard]] std::expected<ShaderProgram*, std::string> load_program(
         const ShaderProgramDesc& desc);

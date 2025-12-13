@@ -129,10 +129,10 @@ public:
     [[nodiscard]] virtual render_stats get_stats() const = 0;
 };
 
-class i_shader_manager
+class i_shader_system
 {
 public:
-    virtual ~i_shader_manager()                               = default;
+    virtual ~i_shader_system()                                = default;
     [[nodiscard]] virtual bool hot_reload_enabled() const     = 0;
     virtual void               enable_hot_reload(bool enable) = 0;
 };

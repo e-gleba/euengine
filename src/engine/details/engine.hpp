@@ -20,7 +20,7 @@ namespace euengine
 {
 
 // Forward declarations
-class ShaderManager;
+class shader_system;
 class ImGuiLayer;
 class renderer_manager;
 class audio_manager;
@@ -105,7 +105,7 @@ public:
         return device_.get();
     }
     [[nodiscard]] SDL_Window* window() const noexcept { return window_.get(); }
-    [[nodiscard]] ShaderManager* shaders() const noexcept
+    [[nodiscard]] shader_system* shaders() const noexcept
     {
         return shader_manager_.get();
     }
@@ -249,7 +249,7 @@ private:
     std::string        gpu_driver_name_;
 
     // Subsystems
-    std::unique_ptr<ShaderManager>       shader_manager_;
+    std::unique_ptr<shader_system>       shader_manager_;
     std::unique_ptr<ImGuiLayer>          imgui_layer_;
     std::unique_ptr<renderer_manager>    renderer_;
     std::unique_ptr<audio_manager>       audio_;

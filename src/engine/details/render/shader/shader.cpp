@@ -56,7 +56,7 @@ void ShaderProgram::release() noexcept
     }
 }
 
-ShaderManager::ShaderManager(SDL_GPUDevice* device) noexcept
+shader_system::shader_system(SDL_GPUDevice* device) noexcept
     : device_(device)
 {
     if (!SDL_ShaderCross_Init())
@@ -65,25 +65,25 @@ ShaderManager::ShaderManager(SDL_GPUDevice* device) noexcept
     }
 }
 
-ShaderManager::~ShaderManager()
+shader_system::~shader_system()
 {
     release_all();
     SDL_ShaderCross_Quit();
 }
 
-void ShaderManager::set_shader_directory(
+void shader_system::set_shader_directory(
     const std::filesystem::path& dir) noexcept
 {
     shader_dir_ = dir;
     spdlog::info("Shader directory set to: {}", shader_dir_.string());
 }
 
-void ShaderManager::set_reload_callback(ReloadCallback callback) noexcept
+void shader_system::set_reload_callback(ReloadCallback callback) noexcept
 {
     reload_callback_ = std::move(callback);
 }
 
-std::expected<std::string, std::string> ShaderManager::read_file(
+std::expected<std::string, std::string> shader_system::read_file(
     const std::filesystem::path& path) const
 {
     std::filesystem::path full_path = path;
@@ -104,7 +104,7 @@ std::expected<std::string, std::string> ShaderManager::read_file(
     return ss.str();
 }
 
-SDL_Time ShaderManager::get_mod_time(
+SDL_Time shader_system::get_mod_time(
     const std::filesystem::path& path) const noexcept
 {
     std::filesystem::path full_path = path;
@@ -121,7 +121,7 @@ SDL_Time ShaderManager::get_mod_time(
     return 0;
 }
 
-std::expected<SDL_GPUShader*, std::string> ShaderManager::compile_shader(
+std::expected<SDL_GPUShader*, std::string> shader_system::compile_shader(
     const ShaderSource& source)
 {
     auto content_result = read_file(source.path);
@@ -199,7 +199,7 @@ std::expected<SDL_GPUShader*, std::string> ShaderManager::compile_shader(
     return shader;
 }
 
-std::expected<ShaderProgram*, std::string> ShaderManager::load_program(
+std::expected<ShaderProgram*, std::string> shader_system::load_program(
     const ShaderProgramDesc& desc)
 {
     std::string name(desc.name);
@@ -240,7 +240,7 @@ std::expected<ShaderProgram*, std::string> ShaderManager::load_program(
     return &it->second;
 }
 
-ShaderProgram* ShaderManager::get_program(std::string_view name) noexcept
+ShaderProgram* shader_system::get_program(std::string_view name) noexcept
 {
     if (auto it = programs_.find(std::string(name)); it != programs_.end())
     {
@@ -249,7 +249,7 @@ ShaderProgram* ShaderManager::get_program(std::string_view name) noexcept
     return nullptr;
 }
 
-bool ShaderManager::reload_program(ShaderProgram& program)
+bool shader_system::reload_program(ShaderProgram& program)
 {
     auto vertex_result = compile_shader(program.vertex_source_);
     if (!vertex_result)
@@ -290,7 +290,7 @@ bool ShaderManager::reload_program(ShaderProgram& program)
     return true;
 }
 
-void ShaderManager::check_for_updates()
+void shader_system::check_for_updates()
 {
     if (!hot_reload_enabled_)
     {
@@ -326,7 +326,7 @@ void ShaderManager::check_for_updates()
     }
 }
 
-void ShaderManager::release_all() noexcept
+void shader_system::release_all() noexcept
 {
     for (auto& [name, program] : programs_)
     {

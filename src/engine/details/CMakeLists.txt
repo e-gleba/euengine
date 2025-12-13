@@ -19,13 +19,13 @@ target_link_libraries(
         euengine::model
         euengine::audio
         euengine::game_module
-        euengine::renderer
+        euengine::render
+        euengine::shader
         warnings
         glm
         EnTT::EnTT
         spdlog
         SDL3::SDL3-static
-        SDL3_shadercross::SDL3_shadercross
         yaml-cpp
         stb
         imgui_sdl3

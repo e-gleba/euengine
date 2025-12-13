@@ -1,4 +1,9 @@
-file(GLOB_RECURSE src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+# Add texture and shader subdirectories
+add_subdirectory(texture)
+add_subdirectory(shader)
+
+# Only include .cpp files in this directory, not subdirectories
+file(GLOB src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 
 add_library(renderer_manager STATIC ${src})
 
@@ -14,10 +19,12 @@ target_link_libraries(
     PRIVATE
         engine_interface
         euengine::model
+        euengine::texture
+        euengine::shader
         warnings
         glm
         spdlog
         SDL3::SDL3-static
 )
 
-add_library(euengine::renderer ALIAS renderer_manager)
+add_library(euengine::render ALIAS renderer_manager)

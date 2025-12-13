@@ -2,8 +2,8 @@
 /// @brief Renderer manager implementation wrapping Renderer class
 
 #include "renderer_manager.hpp"
-#include "../shader.hpp"
 #include "renderer.hpp"
+#include "shader/shader.hpp"
 
 #include <SDL3/SDL_gpu.h>
 
@@ -17,7 +17,7 @@ public:
     impl() = default;
     ~impl() { renderer_.shutdown(); }
 
-    bool init(SDL_GPUDevice* device, ShaderManager* shaders)
+    bool init(SDL_GPUDevice* device, shader_system* shaders)
     {
         return renderer_.init(device, shaders);
     }
@@ -144,7 +144,7 @@ renderer_manager::renderer_manager()
 
 renderer_manager::~renderer_manager() = default;
 
-bool renderer_manager::init(SDL_GPUDevice* device, ShaderManager* shaders)
+bool renderer_manager::init(SDL_GPUDevice* device, shader_system* shaders)
 {
     return pimpl_->init(device, shaders);
 }

@@ -102,7 +102,7 @@ struct engine_context final
 {
     entt::registry*    registry  = nullptr;
     i_renderer*        renderer  = nullptr;
-    i_shader_manager*  shaders   = nullptr;
+    i_shader_system*   shaders   = nullptr;
     i_audio*           audio     = nullptr;
     i_engine_settings* settings  = nullptr;
     i_profiler*        profiler  = nullptr; ///< Optional profiler interface

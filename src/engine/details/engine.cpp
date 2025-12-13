@@ -3,7 +3,7 @@
 #include "game_module/game_module_manager.hpp"
 #include "imgui_layer.hpp"
 #include "render/renderer_manager.hpp"
-#include "shader.hpp"
+#include "render/shader/shader.hpp"
 
 #include <core-api/camera.hpp>
 #include <core-api/profiler.hpp>
@@ -13,11 +13,7 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
-#include <chrono>
 #include <cstdlib>
-#include <format>
-#include <ranges>
-#include <sstream>
 #include <vector>
 
 namespace euengine
@@ -149,7 +145,7 @@ bool engine::init(const preinit_settings& settings)
     max_anisotropy_ = settings.renderer.max_anisotropy;
 
     // Initialize shader manager
-    shader_manager_ = std::make_unique<ShaderManager>(device_.get());
+    shader_manager_ = std::make_unique<shader_system>(device_.get());
     shader_manager_->set_shader_directory("shaders");
 
     // Initialize renderer

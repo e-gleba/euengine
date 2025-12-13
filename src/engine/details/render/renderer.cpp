@@ -1,6 +1,8 @@
 #include "renderer.hpp"
-#include "../shader.hpp"
-#include "../texture.hpp"
+#include "shader/shader.hpp"
+#include "texture/texture.hpp"
+
+#include <SDL3/SDL_gpu.h>
 
 #include <core-api/profiler.hpp>
 
@@ -60,7 +62,7 @@ Renderer::~Renderer()
     shutdown();
 }
 
-bool Renderer::init(SDL_GPUDevice* device, ShaderManager* shaders)
+bool Renderer::init(SDL_GPUDevice* device, shader_system* shaders)
 {
     device_  = device;
     shaders_ = shaders;
@@ -1381,11 +1383,11 @@ model_handle Renderer::load_model(const std::filesystem::path& path,
         else if (!model_tex.embedded_data.empty())
         {
             // Load from embedded data
-            auto tex_result = euengine::load_texture_from_memory(
-                device_,
-                model_tex.embedded_data.data(),
-                model_tex.embedded_data.size(),
-                true);
+            auto tex_result =
+                load_texture_from_memory(device_,
+                                         model_tex.embedded_data.data(),
+                                         model_tex.embedded_data.size(),
+                                         true);
 
             if (tex_result)
             {

@@ -16,7 +16,7 @@ namespace euengine
 {
 
 // Forward declarations
-class ShaderManager;
+class shader_system;
 class i_profiler;
 
 /// Post-processing parameters
@@ -45,11 +45,11 @@ public:
     renderer_manager(renderer_manager&&)                 = delete;
     renderer_manager& operator=(renderer_manager&&)      = delete;
 
-    /// Initialize renderer with GPU device and shader manager
+    /// Initialize renderer with GPU device and shader system
     /// @param device SDL3 GPU device (non-owning)
-    /// @param shaders Shader manager (non-owning)
+    /// @param shaders Shader system (non-owning)
     /// @return true if initialized successfully
-    [[nodiscard]] bool init(SDL_GPUDevice* device, ShaderManager* shaders);
+    [[nodiscard]] bool init(SDL_GPUDevice* device, shader_system* shaders);
 
     /// Shutdown renderer and release all resources
     void shutdown();
