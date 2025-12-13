@@ -55,12 +55,12 @@ Edge-gen: SDL3 GPU engine with hot-reload architecture.
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      core-api/                              │
-│  (Interface Library - Header Only, No Implementation)      │
+│  (Interface Library - Header Only, No Implementation)       │
 │                                                             │
-│  • i_renderer, i_audio, i_shader_system                    │
-│  • i_model_loader, i_overlay_layer                         │
-│  • engine_context, preinit_settings                        │
-│  • Pure interfaces, no dependencies on implementation      │
+│  • i_renderer, i_audio, i_shader_system                     │
+│  • i_model_loader, i_overlay_layer                          │
+│  • engine_context, preinit_settings                         │
+│  • Pure interfaces, no dependencies on implementation       │
 └─────────────────────────────────────────────────────────────┘
                             ▲
                             │ implements
@@ -87,23 +87,27 @@ Edge-gen: SDL3 GPU engine with hot-reload architecture.
 **Clean Separation**: The `core-api/` directory contains pure interface definitions that both engine and game depend on. The engine implements these interfaces, while the game uses them without knowing implementation details.
 
 **Interface Library**: `core-api/` is header-only with no implementation. It defines:
+
 - Subsystem interfaces (`i_renderer`, `i_audio`, `i_shader_system`, etc.)
 - Data structures (`engine_context`, `preinit_settings`, etc.)
 - No SDL3, Vulkan, or other implementation-specific types exposed to game
 
 **Engine Implementation**: The `engine.exe` executable:
+
 - Implements all interfaces from `core-api/`
 - Manages SDL3, GPU, audio subsystems internally
 - Provides `engine_context` to game with subsystem pointers
 - Handles hot-reload of `game.so` without restarting
 
 **Game Module**: The `game.so` shared library:
+
 - Uses only `core-api/` interfaces
 - No knowledge of SDL3, Vulkan, or engine internals
 - Can be reloaded at runtime (F5) without restarting engine
 - Clean, minimal API surface
 
 **Hot Reload Flow**:
+
 1. Game code changes → rebuild `game.so`
 2. Press F5 in engine → unload old `game.so`, load new one
 3. Engine context passed to new game module
@@ -149,6 +153,7 @@ pre-commit install
 ```
 
 Hooks run on commit:
+
 - **clang-format** - C++ code formatting (auto-fixes)
 - **gersemi** - CMake formatting (auto-fixes)
 
