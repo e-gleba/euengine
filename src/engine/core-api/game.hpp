@@ -5,7 +5,6 @@
 #include "model_loader.hpp"
 #include "overlay_layer.hpp"
 #include "profiler.hpp"
-#include "render_system.hpp"
 #include "renderer.hpp"
 #include "window.hpp"
 
