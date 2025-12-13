@@ -4,18 +4,37 @@
 
 SDL3 GPU engine with hot-reload architecture.
 
-## Technologies
+## Key Technologies
 
-- **SDL3** with GPU (Vulkan backend)
-- **SDL3_mixer** for audio
-- **SDL3_shadercross** for shader compilation
-- **EnTT** ECS
-- **GLM** for math
-- **fastgltf** / **tinygltf** for GLTF/GLB support
-- **ImGui** for UI
-- **spdlog** for logging
-- **yaml-cpp** for configuration
-- **pybind11** for Python embedding
+![SDL3](https://img.shields.io/badge/SDL3-FF6B6B?style=for-the-badge&logo=sdl&logoColor=white)
+![Vulkan](https://img.shields.io/badge/Vulkan-AC162C?style=for-the-badge&logo=vulkan&logoColor=white)
+![C++26](https://img.shields.io/badge/C%2B%2B-26-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white)
+
+### Core Libraries
+
+- **[SDL3](https://github.com/libsdl-org/SDL)** - Window management, events, and GPU abstraction
+- **[SDL3 GPU](https://github.com/libsdl-org/SDL_gpu)** - Vulkan backend via SDL3 GPU API
+- **[SDL3_mixer](https://github.com/libsdl-org/SDL_mixer)** - Audio playback and mixing
+- **[SDL3_shadercross](https://github.com/libsdl-org/SDL_shadercross)** - Cross-platform shader compilation
+
+### Graphics & Rendering
+
+- **[fastgltf](https://github.com/spnda/fastgltf)** - Fast GLTF/GLB model loading
+- **[tinygltf](https://github.com/syoyo/tinygltf)** - Alternative GLTF loader
+- **[GLM](https://github.com/g-truc/glm)** - OpenGL Mathematics library
+- **[stb](https://github.com/nothings/stb)** - Image loading utilities
+
+### Game Development
+
+- **[EnTT](https://github.com/skypjack/entt)** - Fast and modern ECS framework
+- **[ImGui](https://github.com/ocornut/imgui)** - Immediate mode GUI
+- **[pybind11](https://github.com/pybind/pybind11)** - Python scripting support
+
+### Tools & Utilities
+
+- **[spdlog](https://github.com/gabime/spdlog)** - Fast C++ logging library
+- **[Tracy](https://github.com/wolfpld/tracy)** - Real-time performance profiler
+- **[yaml-cpp](https://github.com/jbeder/yaml-cpp)** - YAML configuration parser
 
 ## Why not Unity/Godot/Unreal?
 
@@ -51,6 +70,19 @@ Engine runs as executable. Game logic lives in shared library. Reload game witho
 ## GLTF Support
 
 Full GLTF/GLB import. Model in Godot, export, load directly. Engine handles rendering, physics, and game logic.
+
+## Planned Features
+
+### Steam Audio Integration
+
+Planned support for **[Steam Audio](https://valvesoftware.github.io/steam-audio/)** - Valve's spatial audio solution providing:
+
+- **3D spatial audio** - Realistic sound propagation and occlusion
+- **HRTF (Head-Related Transfer Function)** - Binaural audio for headphones
+- **Reflection and reverb** - Physics-based acoustic simulation
+- **Occlusion and obstruction** - Dynamic sound blocking by geometry
+
+This will enhance the audio subsystem with professional-grade spatial audio capabilities for immersive game experiences.
 
 ## Building
 
