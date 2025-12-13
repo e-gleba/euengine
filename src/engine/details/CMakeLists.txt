@@ -11,6 +11,7 @@ set_target_properties(
 add_subdirectory(model)
 add_subdirectory(audio)
 add_subdirectory(game_module)
+add_subdirectory(render)
 target_link_libraries(
     engine
     PRIVATE
@@ -18,6 +19,7 @@ target_link_libraries(
         euengine::model
         euengine::audio
         euengine::game_module
+        euengine::renderer
         warnings
         glm
         EnTT::EnTT

@@ -1,6 +1,6 @@
-#include "render.hpp"
-#include "shader.hpp"
-#include "texture.hpp"
+#include "renderer.hpp"
+#include "../shader.hpp"
+#include "../texture.hpp"
 
 #include <core-api/profiler.hpp>
 

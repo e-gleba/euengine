@@ -22,7 +22,7 @@ namespace euengine
 // Forward declarations
 class ShaderManager;
 class ImGuiLayer;
-class Renderer;
+class renderer_manager;
 class audio_manager;
 class game_module_manager;
 
@@ -109,10 +109,7 @@ public:
     {
         return shader_manager_.get();
     }
-    [[nodiscard]] Renderer* renderer() const noexcept
-    {
-        return renderer_.get();
-    }
+    [[nodiscard]] i_renderer* renderer() const noexcept;
 
     // i_engine_settings implementation
     void                     set_vsync(vsync_mode mode) noexcept override;
@@ -254,7 +251,7 @@ private:
     // Subsystems
     std::unique_ptr<ShaderManager>       shader_manager_;
     std::unique_ptr<ImGuiLayer>          imgui_layer_;
-    std::unique_ptr<Renderer>            renderer_;
+    std::unique_ptr<renderer_manager>    renderer_;
     std::unique_ptr<audio_manager>       audio_;
     std::unique_ptr<game_module_manager> game_module_;
 

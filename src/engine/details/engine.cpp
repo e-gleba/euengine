@@ -2,7 +2,7 @@
 #include "audio/audio.hpp"
 #include "game_module/game_module_manager.hpp"
 #include "imgui_layer.hpp"
-#include "render.hpp"
+#include "render/renderer_manager.hpp"
 #include "shader.hpp"
 
 #include <core-api/camera.hpp>
@@ -153,7 +153,7 @@ bool engine::init(const preinit_settings& settings)
     shader_manager_->set_shader_directory("shaders");
 
     // Initialize renderer
-    renderer_ = std::make_unique<Renderer>();
+    renderer_ = std::make_unique<renderer_manager>();
     if (!renderer_->init(device_.get(), shader_manager_.get()))
     {
         spdlog::error("renderer init failed");
@@ -205,7 +205,8 @@ bool engine::init(const preinit_settings& settings)
 
     // Setup engine context for game
     context_.registry = &registry_;
-    context_.renderer = renderer_.get();
+    context_.renderer =
+        renderer_ != nullptr ? renderer_->get_renderer() : nullptr;
     context_.shaders  = shader_manager_.get();
     context_.audio    = audio_.get();
     context_.settings = this; // Engine implements i_engine_settings
@@ -314,6 +315,11 @@ void engine::set_fullscreen(bool fullscreen) noexcept
         return;
     }
     SDL_SetWindowFullscreen(window_.get(), fullscreen);
+}
+
+i_renderer* engine::renderer() const noexcept
+{
+    return renderer_ != nullptr ? renderer_->get_renderer() : nullptr;
 }
 
 bool engine::is_fullscreen() const noexcept
@@ -1158,7 +1164,7 @@ void engine::render()
     {
         [[maybe_unused]] auto profiler_zone_postprocess = profiler_zone_begin(
             context_.profiler, "engine::render::postprocess");
-        Renderer::postprocess_params pp_params {};
+        postprocess_params pp_params {};
         pp_params.gamma        = gamma_;
         pp_params.brightness   = brightness_;
         pp_params.contrast     = contrast_;
