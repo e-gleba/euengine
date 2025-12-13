@@ -51,3 +51,5 @@ CheckOptions:
     value: lower_case
   - key: readability-uppercase-literal-suffix.NewSuffixes
     value: f;l;u;uz;ul;ll;ull
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: "_"
