@@ -1,4 +1,5 @@
 #include "gltf_loader.hpp"
+#include <core-api/model_loader.hpp>
 
 #include <fastgltf/core.hpp>
 #include <fastgltf/glm_element_traits.hpp>
@@ -973,7 +974,7 @@ void extract_scene_nodes(const fastgltf::Asset&    asset,
 
 } // namespace
 
-load_result gltf_loader::load(const std::filesystem::path& path) const
+load_result gltf_loader::load(const std::filesystem::path& path)
 {
     if (!std::filesystem::exists(path))
     {
@@ -1130,7 +1131,7 @@ load_result gltf_loader::load(const std::filesystem::path& path) const
     return model;
 }
 
-bool gltf_loader::supports(std::string_view extension) const
+bool gltf_loader::supports(std::string_view extension)
 {
     auto lower = std::string(extension);
     std::ranges::transform(lower, lower.begin(), ::tolower);
@@ -1138,7 +1139,7 @@ bool gltf_loader::supports(std::string_view extension) const
                                [&lower](auto ext) { return ext == lower; });
 }
 
-std::span<const std::string_view> gltf_loader::extensions() const
+std::span<const std::string_view> gltf_loader::extensions()
 {
     return k_extensions;
 }

@@ -1357,8 +1357,9 @@ gpu_model Renderer::upload_loaded_model(const loaded_model& data,
 model_handle Renderer::load_model(const std::filesystem::path& path,
                                   const glm::vec3&             color)
 {
-    // Use modular loader registry
-    auto result = get_model_loader_registry().load(path);
+    // Use model system to load model
+    static model_system loader;
+    auto                result = loader.load(path);
     if (!result)
     {
         spdlog::error("== model {}: {}", path.string(), result.error());

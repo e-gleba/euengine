@@ -3,17 +3,21 @@
 /// @file gltf_loader.hpp
 /// @brief glTF 2.0 model loader (supports .gltf and .glb)
 
-#include "model_loader.hpp"
+#include <core-api/model_loader.hpp>
+
+#include <array>
+#include <span>
+#include <string_view>
 
 namespace euengine
 {
 
-/// glTF 2.0 file format loader
-class gltf_loader final : public IModelLoader
+/// glTF 2.0 file format loader (internal implementation)
+class gltf_loader final
 {
 public:
-    gltf_loader()           = default;
-    ~gltf_loader() override = default;
+    gltf_loader()  = default;
+    ~gltf_loader() = default;
 
     // Non-copyable, non-movable
     gltf_loader(const gltf_loader&)            = delete;
@@ -21,12 +25,11 @@ public:
     gltf_loader(gltf_loader&&)                 = delete;
     gltf_loader& operator=(gltf_loader&&)      = delete;
 
-    [[nodiscard]] load_result load(
-        const std::filesystem::path& path) const override;
+    [[nodiscard]] load_result load(const std::filesystem::path& path);
 
-    [[nodiscard]] bool supports(std::string_view extension) const override;
+    [[nodiscard]] bool supports(std::string_view extension);
 
-    [[nodiscard]] std::span<const std::string_view> extensions() const override;
+    [[nodiscard]] std::span<const std::string_view> extensions();
 
 private:
     static constexpr std::array<std::string_view, 2> k_extensions { ".gltf",

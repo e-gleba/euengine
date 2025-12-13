@@ -3,7 +3,7 @@
 /// @file render.hpp
 /// @brief GPU renderer with mesh and model management
 
-#include "../model/model_loader_registry.hpp"
+#include "../model/model_system.hpp"
 #include "core-api/profiler.hpp"
 #include "core-api/renderer.hpp"
 

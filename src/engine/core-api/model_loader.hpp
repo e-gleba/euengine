@@ -258,51 +258,21 @@ struct loaded_model final
     }
 };
 
-enum class loader_error
-{
-    file_not_found,
-    parse_error,
-    invalid_format,
-    no_meshes,
-    unsupported_feature,
-};
-
-[[nodiscard]] constexpr std::string_view to_string(loader_error err) noexcept
-{
-    switch (err)
-    {
-        case loader_error::file_not_found:
-            return "file not found";
-        case loader_error::parse_error:
-            return "parse error";
-        case loader_error::invalid_format:
-            return "invalid format";
-        case loader_error::no_meshes:
-            return "no meshes in file";
-        case loader_error::unsupported_feature:
-            return "unsupported feature";
-    }
-    return "unknown error";
-}
-
 /// Result type for model loading operations
 using load_result = std::expected<loaded_model, std::string>;
 
-class IModelLoader
+/// Model loader interface - abstracts model loading implementation
+/// Engine doesn't know about specific format (GLTF, OBJ, etc.)
+class i_model_loader
 {
 public:
-    virtual ~IModelLoader() = default;
+    virtual ~i_model_loader() = default;
 
     /// Load a model from file
+    /// @param path Path to model file
+    /// @return Loaded model data on success, error message on failure
     [[nodiscard]] virtual load_result load(
         const std::filesystem::path& path) const = 0;
-
-    /// Check if this loader supports the given file extension
-    [[nodiscard]] virtual bool supports(std::string_view extension) const = 0;
-
-    /// Get supported extensions for this loader
-    [[nodiscard]] virtual std::span<const std::string_view> extensions()
-        const = 0;
 };
 
 } // namespace euengine
