@@ -1,5 +1,5 @@
 /// @file audio.cpp
-/// @brief Audio manager implementation using SDL3_mixer
+/// @brief Audio system implementation using SDL3_mixer
 
 #include "audio.hpp"
 

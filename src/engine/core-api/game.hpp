@@ -2,6 +2,7 @@
 
 #include "audio_system.hpp"
 #include "engine.hpp"
+#include "engine_interface.hpp"
 #include "model_loader.hpp"
 #include "overlay_layer.hpp"
 #include "profiler.hpp"

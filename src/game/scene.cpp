@@ -1,11 +1,6 @@
 #include "scene.hpp"
-
-// Suppress deprecated warnings for legacy context members
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "ui.hpp"
 
-#include <algorithm>
 #include <core-api/camera.hpp>
 #include <core-api/profiler.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -228,15 +223,19 @@ void init(euengine::engine_context* ctx)
         ctx->registry->destroy(g_camera);
     }
 
-    g_camera     = ctx->registry->create();
-    auto& cam    = ctx->registry->emplace<euengine::camera_component>(g_camera);
-    cam.position = { 0, 4, 16 };
-    cam.pitch    = -8;
-    cam.yaw      = -90;
-    cam.move_speed = 12;
-    cam.look_speed = 0.10f;
-    cam.fov        = 60;
-    cam.far_plane  = 200;
+    g_camera = ctx->registry->create();
+    ctx->registry->emplace<euengine::camera_component>(
+        g_camera,
+        euengine::camera_component {
+            .position   = { 0.0f, 4.0f, 16.0f },
+            .yaw        = -90.0f,
+            .pitch      = -8.0f,
+            .fov        = 60.0f,
+            .near_plane = 0.1f,
+            .far_plane  = 200.0f,
+            .move_speed = 12.0f,
+            .look_speed = 0.10f,
+        });
 
     setup_scene();
     scan_models();
@@ -833,5 +832,3 @@ void rebuild_grid()
 }
 
 } // namespace scene
-
-#pragma GCC diagnostic pop

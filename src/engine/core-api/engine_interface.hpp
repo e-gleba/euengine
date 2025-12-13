@@ -1,10 +1,11 @@
 #pragma once
 
-#include "game.hpp"
-
 namespace euengine
 {
 
+// Forward declarations
+struct engine_context;
+class i_engine_settings;
 class i_profiler;
 
 /// Engine interface - main entry point for game interaction

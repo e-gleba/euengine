@@ -1,7 +1,7 @@
-/// @file game_module_manager.cpp
+/// @file game_module_system.cpp
 /// @brief Game module system implementation using SDL3_loadso
 
-#include "game_module_manager.hpp"
+#include "game_module_system.hpp"
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_loadso.h>

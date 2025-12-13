@@ -1,6 +1,6 @@
 #include "engine.hpp"
 #include "audio/audio.hpp"
-#include "game_module/game_module_manager.hpp"
+#include "game_module/game_module_system.hpp"
 #include "overlay/imgui_layer.hpp"
 #include "render/render_system.hpp"
 #include "render/shader/shader.hpp"
@@ -140,7 +140,7 @@ bool engine::init(const preinit_settings& settings)
     render_scale_   = settings.renderer.render_scale;
     max_anisotropy_ = settings.renderer.max_anisotropy;
 
-    // Initialize shader manager
+    // Initialize shader system
     shader_system_ = std::make_unique<shader_system>(device_.get());
     shader_system_->set_shader_directory("shaders");
 
@@ -179,7 +179,7 @@ bool engine::init(const preinit_settings& settings)
         spdlog::warn("audio init failed, continuing without audio");
     }
 
-    // Initialize game module manager
+    // Initialize game module system
     game_module_system_ = std::make_unique<game_module_system>();
 
     // Apply audio settings

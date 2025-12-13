@@ -1,22 +1,22 @@
 file(GLOB_RECURSE src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 
-add_library(texture_manager STATIC ${src})
+add_library(texture_system STATIC ${src})
 
-target_include_directories(texture_manager PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(texture_system PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 set_target_properties(
-    texture_manager
+    texture_system
     PROPERTIES CXX_STANDARD 26 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
 )
 
 target_link_libraries(
-    texture_manager
+    texture_system
     PRIVATE warnings spdlog SDL3::SDL3-static stb::stb
 )
 
 target_include_directories(
-    texture_manager
+    texture_system
     PRIVATE ${CMAKE_SOURCE_DIR}/src/engine
 )
 
-add_library(euengine::texture ALIAS texture_manager)
+add_library(euengine::texture ALIAS texture_system)

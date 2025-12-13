@@ -1,8 +1,4 @@
 #include "ui.hpp"
-
-// Suppress deprecated warnings for legacy context members
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include "imgui_style.hpp"
 #include "scene.hpp"
 
@@ -2620,5 +2616,3 @@ void draw_file_dialog()
 }
 
 } // namespace ui
-
-#pragma GCC diagnostic pop
