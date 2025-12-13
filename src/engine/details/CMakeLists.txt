@@ -9,17 +9,18 @@ set_target_properties(
 )
 
 add_subdirectory(model)
+add_subdirectory(audio)
 target_link_libraries(
     engine
     PRIVATE
         engine_interface
         euengine::model
+        euengine::audio
         warnings
         glm
         EnTT::EnTT
         spdlog
         SDL3::SDL3-static
-        SDL3_mixer::SDL3_mixer-static
         SDL3_shadercross::SDL3_shadercross
         yaml-cpp
         stb

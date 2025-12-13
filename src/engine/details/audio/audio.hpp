@@ -66,10 +66,11 @@ private:
     std::uint64_t next_sound = 1;
 
     music_handle current_playing_music = invalid_music;
-    float        music_volume          = 0.7f;
-    float        sound_volume          = 1.0f;
     bool         music_paused          = false;
     bool         is_initialized        = false;
+
+    float music_volume = 1.0f;
+    float sound_volume = 1.0f;
 };
 
 } // namespace euengine
