@@ -16,7 +16,7 @@ namespace euengine
 {
 
 // PIMPL implementation to hide SDL3 details
-class game_module_manager::impl final
+class game_module_system::impl final
 {
 public:
     impl() = default;
@@ -241,56 +241,56 @@ private:
 };
 
 // Public interface implementation
-game_module_manager::game_module_manager()
+game_module_system::game_module_system()
     : pimpl_(std::make_unique<impl>())
 {
 }
 
-game_module_manager::~game_module_manager() = default;
+game_module_system::~game_module_system() = default;
 
-bool game_module_manager::load(const std::filesystem::path& path,
-                               engine_context*              ctx)
+bool game_module_system::load(const std::filesystem::path& path,
+                              engine_context*              ctx)
 {
     return pimpl_->load(path, ctx);
 }
 
-void game_module_manager::unload(entt::registry* registry) noexcept
+void game_module_system::unload(entt::registry* registry) noexcept
 {
     pimpl_->unload(registry);
 }
 
-bool game_module_manager::reload(engine_context* ctx) noexcept
+bool game_module_system::reload(engine_context* ctx) noexcept
 {
     return pimpl_->reload(ctx);
 }
 
-bool game_module_manager::is_loaded() const noexcept
+bool game_module_system::is_loaded() const noexcept
 {
     return pimpl_->is_loaded();
 }
 
-const std::filesystem::path& game_module_manager::get_path() const noexcept
+const std::filesystem::path& game_module_system::get_path() const noexcept
 {
     return pimpl_->get_path();
 }
 
-preinit_result game_module_manager::call_preinit(
+preinit_result game_module_system::call_preinit(
     preinit_settings* settings) const
 {
     return pimpl_->call_preinit(settings);
 }
 
-void game_module_manager::call_update(engine_context* ctx) const
+void game_module_system::call_update(engine_context* ctx) const
 {
     pimpl_->call_update(ctx);
 }
 
-void game_module_manager::call_render(engine_context* ctx) const
+void game_module_system::call_render(engine_context* ctx) const
 {
     pimpl_->call_render(ctx);
 }
 
-void game_module_manager::call_ui(engine_context* ctx) const
+void game_module_system::call_ui(engine_context* ctx) const
 {
     pimpl_->call_ui(ctx);
 }

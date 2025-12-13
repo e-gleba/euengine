@@ -1,5 +1,5 @@
 /// @file renderer_manager.cpp
-/// @brief Renderer manager implementation wrapping Renderer class
+/// @brief Render system implementation wrapping Renderer class
 
 #include "renderer_manager.hpp"
 #include "renderer.hpp"
@@ -11,7 +11,7 @@ namespace euengine
 {
 
 // PIMPL implementation to hide Renderer class
-class renderer_manager::impl
+class render_system::impl
 {
 public:
     impl() = default;
@@ -137,133 +137,133 @@ private:
 };
 
 // Public interface implementation
-renderer_manager::renderer_manager()
+render_system::render_system()
     : pimpl_(std::make_unique<impl>())
 {
 }
 
-renderer_manager::~renderer_manager() = default;
+render_system::~render_system() = default;
 
-bool renderer_manager::init(SDL_GPUDevice* device, shader_system* shaders)
+bool render_system::init(SDL_GPUDevice* device, shader_system* shaders)
 {
     return pimpl_->init(device, shaders);
 }
 
-void renderer_manager::shutdown()
+void render_system::shutdown()
 {
     pimpl_->shutdown();
 }
 
-i_renderer* renderer_manager::get_renderer() const noexcept
+i_renderer* render_system::get_renderer() const noexcept
 {
     return pimpl_->get_renderer();
 }
 
-void renderer_manager::begin_frame(SDL_GPUCommandBuffer* cmd,
-                                   SDL_GPURenderPass*    pass)
+void render_system::begin_frame(SDL_GPUCommandBuffer* cmd,
+                                SDL_GPURenderPass*    pass)
 {
     pimpl_->begin_frame(cmd, pass);
 }
 
-void renderer_manager::end_frame()
+void render_system::end_frame()
 {
     pimpl_->end_frame();
 }
 
-void renderer_manager::ensure_depth_texture(std::uint32_t width,
-                                            std::uint32_t height)
+void render_system::ensure_depth_texture(std::uint32_t width,
+                                         std::uint32_t height)
 {
     pimpl_->ensure_depth_texture(width, height);
 }
 
-void renderer_manager::ensure_msaa_targets(std::uint32_t width,
-                                           std::uint32_t height,
-                                           std::uint32_t format)
+void render_system::ensure_msaa_targets(std::uint32_t width,
+                                        std::uint32_t height,
+                                        std::uint32_t format)
 {
     pimpl_->ensure_msaa_targets(width, height, format);
 }
 
-SDL_GPUTexture* renderer_manager::msaa_color_target() const noexcept
+SDL_GPUTexture* render_system::msaa_color_target() const noexcept
 {
     return pimpl_->msaa_color_target();
 }
 
-SDL_GPUTexture* renderer_manager::msaa_depth_target() const noexcept
+SDL_GPUTexture* render_system::msaa_depth_target() const noexcept
 {
     return pimpl_->msaa_depth_target();
 }
 
-msaa_samples renderer_manager::get_msaa_samples() const noexcept
+msaa_samples render_system::get_msaa_samples() const noexcept
 {
     return pimpl_->get_msaa_samples();
 }
 
-void renderer_manager::resolve_msaa(SDL_GPUCommandBuffer* cmd,
-                                    SDL_GPUTexture*       target)
+void render_system::resolve_msaa(SDL_GPUCommandBuffer* cmd,
+                                 SDL_GPUTexture*       target)
 {
     pimpl_->resolve_msaa(cmd, target);
 }
 
-void renderer_manager::ensure_pp_target(std::uint32_t width,
-                                        std::uint32_t height,
-                                        std::uint32_t format)
+void render_system::ensure_pp_target(std::uint32_t width,
+                                     std::uint32_t height,
+                                     std::uint32_t format)
 {
     pimpl_->ensure_pp_target(width, height, format);
 }
 
-SDL_GPUTexture* renderer_manager::pp_color_target() const noexcept
+SDL_GPUTexture* render_system::pp_color_target() const noexcept
 {
     return pimpl_->pp_color_target();
 }
 
-void renderer_manager::apply_postprocess(SDL_GPUCommandBuffer*     cmd,
-                                         SDL_GPUTexture*           target,
-                                         const postprocess_params& params)
+void render_system::apply_postprocess(SDL_GPUCommandBuffer*     cmd,
+                                      SDL_GPUTexture*           target,
+                                      const postprocess_params& params)
 {
     pimpl_->apply_postprocess(cmd, target, params);
 }
 
-SDL_GPUTexture* renderer_manager::depth_texture() const noexcept
+SDL_GPUTexture* render_system::depth_texture() const noexcept
 {
     return pimpl_->depth_texture();
 }
 
-void renderer_manager::bind_pipeline()
+void render_system::bind_pipeline()
 {
     pimpl_->bind_pipeline();
 }
 
-void renderer_manager::reload_pipelines()
+void render_system::reload_pipelines()
 {
     pimpl_->reload_pipelines();
 }
 
-void renderer_manager::set_profiler(i_profiler* profiler) noexcept
+void render_system::set_profiler(i_profiler* profiler) noexcept
 {
     pimpl_->set_profiler(profiler);
 }
 
-bool renderer_manager::pipeline_valid() const noexcept
+bool render_system::pipeline_valid() const noexcept
 {
     return pimpl_->pipeline_valid();
 }
 
-void renderer_manager::set_msaa_samples(msaa_samples samples)
+void render_system::set_msaa_samples(msaa_samples samples)
 {
     pimpl_->set_msaa_samples(samples);
 }
 
-void renderer_manager::set_max_anisotropy(float anisotropy)
+void render_system::set_max_anisotropy(float anisotropy)
 {
     pimpl_->set_max_anisotropy(anisotropy);
 }
 
-void renderer_manager::set_texture_filter(i_renderer::texture_filter filter)
+void render_system::set_texture_filter(i_renderer::texture_filter filter)
 {
     pimpl_->set_texture_filter(filter);
 }
 
-void renderer_manager::set_view_projection(const glm::mat4& vp)
+void render_system::set_view_projection(const glm::mat4& vp)
 {
     pimpl_->set_view_projection(vp);
 }

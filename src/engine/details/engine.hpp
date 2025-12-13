@@ -22,9 +22,9 @@ namespace euengine
 // Forward declarations
 class shader_system;
 class ImGuiLayer;
-class renderer_manager;
-class audio_manager;
-class game_module_manager;
+class render_system;
+class audio_system;
+class game_module_system;
 
 /// RAII deleter for SDL_Window
 struct sdl_window_deleter final
@@ -107,7 +107,7 @@ public:
     [[nodiscard]] SDL_Window* window() const noexcept { return window_.get(); }
     [[nodiscard]] shader_system* shaders() const noexcept
     {
-        return shader_manager_.get();
+        return shader_system_.get();
     }
     [[nodiscard]] i_renderer* renderer() const noexcept;
 
@@ -138,7 +138,7 @@ public:
     [[nodiscard]] float get_master_volume() const noexcept override;
     [[nodiscard]] bool  is_audio_available() const noexcept override
     {
-        return audio_ != nullptr;
+        return audio_system_ != nullptr;
     }
 
     // Rendering settings
@@ -249,11 +249,11 @@ private:
     std::string        gpu_driver_name_;
 
     // Subsystems
-    std::unique_ptr<shader_system>       shader_manager_;
-    std::unique_ptr<ImGuiLayer>          imgui_layer_;
-    std::unique_ptr<renderer_manager>    renderer_;
-    std::unique_ptr<audio_manager>       audio_;
-    std::unique_ptr<game_module_manager> game_module_;
+    std::unique_ptr<shader_system>      shader_system_;
+    std::unique_ptr<ImGuiLayer>         imgui_layer_;
+    std::unique_ptr<render_system>      render_system_;
+    std::unique_ptr<audio_system>       audio_system_;
+    std::unique_ptr<game_module_system> game_module_system_;
 
     // Frame timing
     Uint64   last_time_    = 0;

@@ -11,12 +11,12 @@
 namespace euengine
 {
 
-audio_manager::~audio_manager()
+audio_system::~audio_system()
 {
     shutdown();
 }
 
-bool audio_manager::init()
+bool audio_system::init()
 {
     if (is_initialized)
     {
@@ -58,7 +58,7 @@ bool audio_manager::init()
     return true;
 }
 
-void audio_manager::shutdown()
+void audio_system::shutdown()
 {
     if (!is_initialized)
     {
@@ -102,7 +102,7 @@ void audio_manager::shutdown()
     spdlog::info("=> audio shutdown");
 }
 
-music_handle audio_manager::load_music(const std::filesystem::path& path)
+music_handle audio_system::load_music(const std::filesystem::path& path)
 {
     if (!is_initialized || (mixer == nullptr) || path.empty())
     {
@@ -121,7 +121,7 @@ music_handle audio_manager::load_music(const std::filesystem::path& path)
     return next_music++;
 }
 
-void audio_manager::unload_music(music_handle h)
+void audio_system::unload_music(music_handle h)
 {
     if (auto it = music.find(h); it != music.end())
     {
@@ -134,7 +134,7 @@ void audio_manager::unload_music(music_handle h)
     }
 }
 
-void audio_manager::play_music(music_handle h, bool loop)
+void audio_system::play_music(music_handle h, bool loop)
 {
     auto it = music.find(h);
     if (it == music.end() || (music_track == nullptr))
@@ -161,7 +161,7 @@ void audio_manager::play_music(music_handle h, bool loop)
     music_paused          = false;
 }
 
-void audio_manager::stop_music()
+void audio_system::stop_music()
 {
     if (music_track != nullptr)
     {
@@ -171,7 +171,7 @@ void audio_manager::stop_music()
     music_paused          = false;
 }
 
-void audio_manager::pause_music()
+void audio_system::pause_music()
 {
     if (music_track != nullptr)
     {
@@ -180,7 +180,7 @@ void audio_manager::pause_music()
     }
 }
 
-void audio_manager::resume_music()
+void audio_system::resume_music()
 {
     if (music_track != nullptr)
     {
@@ -189,7 +189,7 @@ void audio_manager::resume_music()
     }
 }
 
-void audio_manager::set_music_volume(float volume)
+void audio_system::set_music_volume(float volume)
 {
     music_volume = std::clamp(volume, 0.0f, 1.0f);
     if (music_track != nullptr)
@@ -198,17 +198,17 @@ void audio_manager::set_music_volume(float volume)
     }
 }
 
-bool audio_manager::is_music_playing() const
+bool audio_system::is_music_playing() const
 {
     return (music_track != nullptr) && MIX_TrackPlaying(music_track);
 }
 
-bool audio_manager::is_music_paused() const
+bool audio_system::is_music_paused() const
 {
     return music_paused;
 }
 
-sound_handle audio_manager::load_sound(const std::filesystem::path& path)
+sound_handle audio_system::load_sound(const std::filesystem::path& path)
 {
     if (!is_initialized || (mixer == nullptr) || path.empty())
     {
@@ -227,7 +227,7 @@ sound_handle audio_manager::load_sound(const std::filesystem::path& path)
     return next_sound++;
 }
 
-void audio_manager::unload_sound(sound_handle h)
+void audio_system::unload_sound(sound_handle h)
 {
     if (auto it = sounds.find(h); it != sounds.end())
     {
@@ -236,7 +236,7 @@ void audio_manager::unload_sound(sound_handle h)
     }
 }
 
-void audio_manager::play_sound(sound_handle h, [[maybe_unused]] float volume)
+void audio_system::play_sound(sound_handle h, [[maybe_unused]] float volume)
 {
     auto it = sounds.find(h);
     if (it == sounds.end() || (mixer == nullptr))
@@ -246,7 +246,7 @@ void audio_manager::play_sound(sound_handle h, [[maybe_unused]] float volume)
     MIX_PlayAudio(mixer, it->second);
 }
 
-void audio_manager::set_sound_volume(float volume)
+void audio_system::set_sound_volume(float volume)
 {
     sound_volume = std::clamp(volume, 0.0f, 1.0f);
 }

@@ -79,9 +79,6 @@ bool engine::init(const preinit_settings& settings)
         case window_mode::fullscreen:
             window_flags |= SDL_WINDOW_FULLSCREEN;
             break;
-        case window_mode::fullscreen_desktop:
-            window_flags |= SDL_WINDOW_FULLSCREEN;
-            break;
         case window_mode::windowed:
         default:
             break;
@@ -145,26 +142,26 @@ bool engine::init(const preinit_settings& settings)
     max_anisotropy_ = settings.renderer.max_anisotropy;
 
     // Initialize shader manager
-    shader_manager_ = std::make_unique<shader_system>(device_.get());
-    shader_manager_->set_shader_directory("shaders");
+    shader_system_ = std::make_unique<shader_system>(device_.get());
+    shader_system_->set_shader_directory("shaders");
 
     // Initialize renderer
-    renderer_ = std::make_unique<renderer_manager>();
-    if (!renderer_->init(device_.get(), shader_manager_.get()))
+    render_system_ = std::make_unique<render_system>();
+    if (!render_system_->init(device_.get(), shader_system_.get()))
     {
         spdlog::error("renderer init failed");
         return false;
     }
 
     // Apply initial rendering settings to renderer
-    renderer_->set_msaa_samples(current_msaa_);
-    renderer_->set_max_anisotropy(max_anisotropy_);
+    render_system_->set_msaa_samples(current_msaa_);
+    render_system_->set_max_anisotropy(max_anisotropy_);
 
     // Set frame buffering (default: 2 = double buffering)
     SDL_SetGPUAllowedFramesInFlight(device_.get(), frames_in_flight_);
     spdlog::info("Frames in flight: {}", frames_in_flight_);
 
-    renderer_->ensure_depth_texture(
+    render_system_->ensure_depth_texture(
         static_cast<Uint32>(settings.window.width),
         static_cast<Uint32>(settings.window.height));
 
@@ -177,23 +174,23 @@ bool engine::init(const preinit_settings& settings)
     }
 
     // Initialize audio subsystem
-    audio_ = std::make_unique<audio_manager>();
-    if (!audio_->init())
+    audio_system_ = std::make_unique<audio_system>();
+    if (!audio_system_->init())
     {
         spdlog::warn("audio init failed, continuing without audio");
     }
 
     // Initialize game module manager
-    game_module_ = std::make_unique<game_module_manager>();
+    game_module_system_ = std::make_unique<game_module_system>();
 
     // Apply audio settings
-    if (audio_)
+    if (audio_system_)
     {
         master_volume_     = settings.audio.master_volume;
         music_volume_mult_ = settings.audio.music_volume;
         sfx_volume_mult_   = settings.audio.sound_volume;
-        audio_->set_music_volume(master_volume_ * music_volume_mult_);
-        audio_->set_sound_volume(master_volume_ * sfx_volume_mult_);
+        audio_system_->set_music_volume(master_volume_ * music_volume_mult_);
+        audio_system_->set_sound_volume(master_volume_ * sfx_volume_mult_);
     }
 
     // Apply background color from settings
@@ -202,9 +199,9 @@ bool engine::init(const preinit_settings& settings)
     // Setup engine context for game
     context_.registry = &registry_;
     context_.renderer =
-        renderer_ != nullptr ? renderer_->get_renderer() : nullptr;
-    context_.shaders  = shader_manager_.get();
-    context_.audio    = audio_.get();
+        render_system_ != nullptr ? render_system_->get_renderer() : nullptr;
+    context_.shaders  = shader_system_.get();
+    context_.audio    = audio_system_.get();
     context_.settings = this; // Engine implements i_engine_settings
     context_.profiler =
         nullptr; // Will be set by game module if profiling is enabled
@@ -228,25 +225,25 @@ void engine::shutdown() noexcept
     spdlog::info("=> engine shutdown");
 
     // Shutdown game module first
-    if (game_module_ != nullptr)
+    if (game_module_system_ != nullptr)
     {
-        game_module_->unload(&registry_);
+        game_module_system_->unload(&registry_);
     }
 
     // Shutdown subsystems in reverse order
-    audio_.reset();
+    audio_system_.reset();
     imgui_layer_.reset();
 
-    if (renderer_)
+    if (render_system_)
     {
-        renderer_->shutdown();
-        renderer_.reset();
+        render_system_->shutdown();
+        render_system_.reset();
     }
 
-    if (shader_manager_)
+    if (shader_system_)
     {
-        shader_manager_->release_all();
-        shader_manager_.reset();
+        shader_system_->release_all();
+        shader_system_.reset();
     }
 
     if (window_ && device_)
@@ -315,7 +312,7 @@ void engine::set_fullscreen(bool fullscreen) noexcept
 
 i_renderer* engine::renderer() const noexcept
 {
-    return renderer_ != nullptr ? renderer_->get_renderer() : nullptr;
+    return render_system_ != nullptr ? render_system_->get_renderer() : nullptr;
 }
 
 bool engine::is_fullscreen() const noexcept
@@ -366,9 +363,9 @@ void engine::set_msaa(msaa_samples samples) noexcept
     if (current_msaa_ != samples)
     {
         current_msaa_ = samples;
-        if (renderer_)
+        if (render_system_)
         {
-            renderer_->set_msaa_samples(samples);
+            render_system_->set_msaa_samples(samples);
         }
     }
 }
@@ -382,9 +379,9 @@ void engine::set_render_scale(float scale) noexcept
 void engine::set_max_anisotropy(float anisotropy) noexcept
 {
     max_anisotropy_ = std::clamp(anisotropy, 1.0f, 16.0f);
-    if (renderer_)
+    if (render_system_)
     {
-        renderer_->set_max_anisotropy(max_anisotropy_);
+        render_system_->set_max_anisotropy(max_anisotropy_);
     }
 }
 
@@ -443,11 +440,11 @@ void engine::set_texture_filter(texture_filter filter) noexcept
 {
     texture_filter_ = filter;
     // Texture filter will be applied when creating/updating samplers
-    if (renderer_)
+    if (render_system_)
     {
         auto rf =
             static_cast<i_renderer::texture_filter>(static_cast<int>(filter));
-        renderer_->set_texture_filter(rf);
+        render_system_->set_texture_filter(rf);
     }
 }
 
@@ -491,16 +488,16 @@ void engine::set_render_distance(float distance) noexcept
 
 bool engine::is_postprocess_available() const noexcept
 {
-    return renderer_ != nullptr;
+    return render_system_ != nullptr;
 }
 
 void engine::set_master_volume(float volume) noexcept
 {
     master_volume_ = std::clamp(volume, 0.0f, 1.0f);
-    if (audio_)
+    if (audio_system_)
     {
-        audio_->set_music_volume(master_volume_ * music_volume_mult_);
-        audio_->set_sound_volume(master_volume_ * sfx_volume_mult_);
+        audio_system_->set_music_volume(master_volume_ * music_volume_mult_);
+        audio_system_->set_sound_volume(master_volume_ * sfx_volume_mult_);
     }
 }
 
@@ -511,30 +508,30 @@ float engine::get_master_volume() const noexcept
 
 bool engine::load_game(const std::filesystem::path& path)
 {
-    if (game_module_ == nullptr)
+    if (game_module_system_ == nullptr)
     {
         return false;
     }
     update_context();
-    return game_module_->load(path, &context_);
+    return game_module_system_->load(path, &context_);
 }
 
 void engine::unload_game() noexcept
 {
-    if (game_module_ != nullptr)
+    if (game_module_system_ != nullptr)
     {
-        game_module_->unload(&registry_);
+        game_module_system_->unload(&registry_);
     }
 }
 
 [[nodiscard]] bool engine::reload_game() noexcept
 {
-    if (game_module_ == nullptr || !game_module_->is_loaded())
+    if (game_module_system_ == nullptr || !game_module_system_->is_loaded())
     {
         return false;
     }
     update_context();
-    return game_module_->reload(&context_);
+    return game_module_system_->reload(&context_);
 }
 
 void engine::update_context() noexcept
@@ -1002,9 +999,9 @@ void engine::update()
     }
 
     update_context();
-    if (game_module_ != nullptr)
+    if (game_module_system_ != nullptr)
     {
-        game_module_->call_update(&context_);
+        game_module_system_->call_update(&context_);
     }
 }
 
@@ -1054,7 +1051,7 @@ void engine::render()
         return;
     }
 
-    renderer_->ensure_depth_texture(swapchain_w, swapchain_h);
+    render_system_->ensure_depth_texture(swapchain_w, swapchain_h);
 
     // Get swapchain format for MSAA and post-processing targets
     auto swapchain_format =
@@ -1068,14 +1065,16 @@ void engine::render()
     // Ensure post-processing target if needed
     if (use_postprocess)
     {
-        renderer_->ensure_pp_target(swapchain_w, swapchain_h, swapchain_format);
+        render_system_->ensure_pp_target(
+            swapchain_w, swapchain_h, swapchain_format);
     }
 
     // Ensure MSAA render targets if MSAA is enabled
-    const bool use_msaa = (renderer_->get_msaa_samples() != msaa_samples::none);
+    const bool use_msaa =
+        (render_system_->get_msaa_samples() != msaa_samples::none);
     if (use_msaa)
     {
-        renderer_->ensure_msaa_targets(
+        render_system_->ensure_msaa_targets(
             swapchain_w, swapchain_h, swapchain_format);
     }
 
@@ -1083,19 +1082,20 @@ void engine::render()
     // - With postprocess: output to pp_color_texture
     // - Without postprocess: output to swapchain
     SDL_GPUTexture* scene_output =
-        use_postprocess ? renderer_->pp_color_target() : swapchain;
+        use_postprocess ? render_system_->pp_color_target() : swapchain;
 
     // Determine which textures to render to for the scene
     SDL_GPUTexture* color_texture =
-        use_msaa ? renderer_->msaa_color_target() : scene_output;
-    SDL_GPUTexture* depth_texture =
-        use_msaa ? renderer_->msaa_depth_target() : renderer_->depth_texture();
+        use_msaa ? render_system_->msaa_color_target() : scene_output;
+    SDL_GPUTexture* depth_texture = use_msaa
+                                        ? render_system_->msaa_depth_target()
+                                        : render_system_->depth_texture();
 
     // Fallback if MSAA target creation failed
     if (use_msaa && (color_texture == nullptr || depth_texture == nullptr))
     {
         color_texture = scene_output;
-        depth_texture = renderer_->depth_texture();
+        depth_texture = render_system_->depth_texture();
     }
 
     // Setup color target with game-controlled clear color
@@ -1111,7 +1111,7 @@ void engine::render()
     color_target.store_op = SDL_GPU_STOREOP_STORE;
 
     // For MSAA, we need to resolve to the scene_output target
-    if (use_msaa && renderer_->msaa_color_target() != nullptr)
+    if (use_msaa && render_system_->msaa_color_target() != nullptr)
     {
         color_target.resolve_texture = scene_output;
         color_target.store_op        = SDL_GPU_STOREOP_RESOLVE;
@@ -1133,30 +1133,30 @@ void engine::render()
         {
             [[maybe_unused]] auto profiler_zone_scene =
                 profiler_zone_begin(context_.profiler, "engine::render::scene");
-            renderer_->begin_frame(cmd, pass);
+            render_system_->begin_frame(cmd, pass);
 
             // Set view projection from first camera
             auto camera_view = registry_.view<camera_component>();
             for (auto&& [entity, cam] : camera_view.each())
             {
-                renderer_->set_view_projection(
+                render_system_->set_view_projection(
                     cam.projection(context_.display.aspect) * cam.view());
                 break;
             }
 
-            renderer_->bind_pipeline();
-            if (game_module_ != nullptr)
+            render_system_->bind_pipeline();
+            if (game_module_system_ != nullptr)
             {
-                game_module_->call_render(&context_);
+                game_module_system_->call_render(&context_);
             }
 
-            renderer_->end_frame();
+            render_system_->end_frame();
         }
         SDL_EndGPURenderPass(pass);
     }
 
     // Apply post-processing if enabled
-    if (use_postprocess && renderer_->pp_color_target() != nullptr)
+    if (use_postprocess && render_system_->pp_color_target() != nullptr)
     {
         [[maybe_unused]] auto profiler_zone_postprocess = profiler_zone_begin(
             context_.profiler, "engine::render::postprocess");
@@ -1170,7 +1170,7 @@ void engine::render()
         pp_params.res_x        = static_cast<float>(swapchain_w);
         pp_params.res_y        = static_cast<float>(swapchain_h);
 
-        renderer_->apply_postprocess(cmd, swapchain, pp_params);
+        render_system_->apply_postprocess(cmd, swapchain, pp_params);
     }
 
     // Render ImGui
@@ -1178,9 +1178,9 @@ void engine::render()
         [[maybe_unused]] auto profiler_zone_imgui =
             profiler_zone_begin(context_.profiler, "engine::render::imgui");
         imgui_layer_->begin_frame();
-        if (game_module_ != nullptr)
+        if (game_module_system_ != nullptr)
         {
-            game_module_->call_ui(&context_);
+            game_module_system_->call_ui(&context_);
         }
         imgui_layer_->end_frame(cmd, swapchain);
     }
@@ -1194,7 +1194,7 @@ void engine::render()
         capture_frame_image(swapchain, swapchain_w, swapchain_h);
     }
 
-    shader_manager_->check_for_updates();
+    shader_system_->check_for_updates();
 }
 
 void engine::iterate()
@@ -1306,9 +1306,9 @@ void engine::set_profiler(i_profiler* profiler) noexcept
 {
     context_.profiler = profiler;
     // Also set profiler on renderer for detailed zones
-    if (renderer_ != nullptr)
+    if (render_system_ != nullptr)
     {
-        renderer_->set_profiler(profiler);
+        render_system_->set_profiler(profiler);
     }
 }
 

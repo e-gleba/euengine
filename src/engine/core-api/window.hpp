@@ -15,10 +15,9 @@ enum class vsync_mode : std::uint8_t
 
 enum class window_mode : std::uint8_t
 {
-    windowed,           ///< Normal windowed mode
-    borderless,         ///< Borderless windowed (fake fullscreen)
-    fullscreen,         ///< Exclusive fullscreen
-    fullscreen_desktop, ///< Fullscreen at desktop resolution
+    windowed,   ///< Normal windowed mode
+    borderless, ///< Borderless windowed (fake fullscreen)
+    fullscreen, ///< Fullscreen
 };
 
 enum class msaa_samples : std::uint8_t
@@ -56,7 +55,7 @@ struct window_settings final
     [[nodiscard]] static constexpr window_settings fullscreen() noexcept
     {
         return window_settings {
-            .mode = window_mode::fullscreen_desktop,
+            .mode = window_mode::fullscreen,
         };
     }
 

@@ -32,18 +32,18 @@ struct postprocess_params
     float res_y        = 1080.0f;
 };
 
-/// Renderer manager - handles renderer initialization and frame management
+/// Render system - handles renderer initialization and frame management
 /// Provides a clean interface without exposing Renderer implementation details
-class renderer_manager
+class render_system
 {
 public:
-    renderer_manager();
-    ~renderer_manager();
+    render_system();
+    ~render_system();
 
-    renderer_manager(const renderer_manager&)            = delete;
-    renderer_manager& operator=(const renderer_manager&) = delete;
-    renderer_manager(renderer_manager&&)                 = delete;
-    renderer_manager& operator=(renderer_manager&&)      = delete;
+    render_system(const render_system&)            = delete;
+    render_system& operator=(const render_system&) = delete;
+    render_system(render_system&&)                 = delete;
+    render_system& operator=(render_system&&)      = delete;
 
     /// Initialize renderer with GPU device and shader system
     /// @param device SDL3 GPU device (non-owning)

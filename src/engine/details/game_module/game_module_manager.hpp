@@ -10,16 +10,16 @@ namespace euengine
 
 /// Game module manager - handles loading/unloading of game shared libraries
 /// Provides a clean interface without exposing implementation details
-class game_module_manager
+class game_module_system
 {
 public:
-    game_module_manager();
-    ~game_module_manager();
+    game_module_system();
+    ~game_module_system();
 
-    game_module_manager(const game_module_manager&)            = delete;
-    game_module_manager& operator=(const game_module_manager&) = delete;
-    game_module_manager(game_module_manager&&)                 = delete;
-    game_module_manager& operator=(game_module_manager&&)      = delete;
+    game_module_system(const game_module_system&)            = delete;
+    game_module_system& operator=(const game_module_system&) = delete;
+    game_module_system(game_module_system&&)                 = delete;
+    game_module_system& operator=(game_module_system&&)      = delete;
 
     /// Load a game module from the given path
     /// @param path Path to the game shared library (.so/.dll)

@@ -11,16 +11,16 @@ struct MIX_Track;
 namespace euengine
 {
 
-class audio_manager final : public i_audio
+class audio_system final : public i_audio
 {
 public:
-    audio_manager() = default;
-    ~audio_manager() override;
+    audio_system() = default;
+    ~audio_system() override;
 
-    audio_manager(const audio_manager&)            = delete;
-    audio_manager& operator=(const audio_manager&) = delete;
-    audio_manager(audio_manager&&)                 = delete;
-    audio_manager& operator=(audio_manager&&)      = delete;
+    audio_system(const audio_system&)            = delete;
+    audio_system& operator=(const audio_system&) = delete;
+    audio_system(audio_system&&)                 = delete;
+    audio_system& operator=(audio_system&&)      = delete;
 
     [[nodiscard]] bool init();
 
