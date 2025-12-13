@@ -12,6 +12,7 @@ add_subdirectory(model)
 add_subdirectory(audio)
 add_subdirectory(game_module)
 add_subdirectory(render)
+add_subdirectory(overlay)
 target_link_libraries(
     engine
     PRIVATE
@@ -21,6 +22,7 @@ target_link_libraries(
         euengine::game_module
         euengine::render
         euengine::shader
+        euengine::overlay
         warnings
         glm
         EnTT::EnTT
@@ -28,7 +30,6 @@ target_link_libraries(
         SDL3::SDL3-static
         yaml-cpp
         stb
-        imgui_sdl3
         Microsoft.GSL::GSL
 )
 

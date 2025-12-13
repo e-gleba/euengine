@@ -1,7 +1,7 @@
 #include "engine.hpp"
 #include "audio/audio.hpp"
 #include "game_module/game_module_manager.hpp"
-#include "imgui_layer.hpp"
+#include "overlay/imgui_layer.hpp"
 #include "render/renderer_manager.hpp"
 #include "render/shader/shader.hpp"
 
@@ -9,7 +9,6 @@
 #include <core-api/profiler.hpp>
 #include <core-api/profiling_events.hpp>
 
-#include <imgui.h>
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
@@ -165,9 +164,9 @@ bool engine::init(const preinit_settings& settings)
         static_cast<Uint32>(settings.window.width),
         static_cast<Uint32>(settings.window.height));
 
-    // Initialize ImGui layer
-    imgui_layer_ = std::make_unique<ImGuiLayer>();
-    if (!imgui_layer_->init(window_.get(), device_.get()))
+    // Initialize UI layer
+    overlay_layer_ = std::make_unique<imgui_layer>();
+    if (!overlay_layer_->init(window_.get(), device_.get()))
     {
         spdlog::error("imgui init failed");
         return false;
@@ -205,7 +204,11 @@ bool engine::init(const preinit_settings& settings)
     context_.settings = this; // Engine implements i_engine_settings
     context_.profiler =
         nullptr; // Will be set by game module if profiling is enabled
-    context_.imgui_ctx  = ImGui::GetCurrentContext();
+    // Get ImGui context from UI layer (if it's an imgui_layer)
+    if (auto* imgui = dynamic_cast<imgui_layer*>(overlay_layer_.get()))
+    {
+        context_.imgui_ctx = imgui->get_imgui_context();
+    }
     context_.background = &background_;
 
     // Initialize timing
@@ -232,7 +235,7 @@ void engine::shutdown() noexcept
 
     // Shutdown subsystems in reverse order
     audio_system_.reset();
-    imgui_layer_.reset();
+    overlay_layer_.reset();
 
     if (render_system_)
     {
@@ -894,7 +897,7 @@ bool engine::process_event(const SDL_Event& event)
     // system shortcuts)
     if (!event_consumed)
     {
-        imgui_layer_->process_event(event);
+        overlay_layer_->process_event(event);
     }
 
     // Continue processing other events (mouse, etc.)
@@ -913,7 +916,7 @@ bool engine::process_event(const SDL_Event& event)
             {
                 input_.mouse_middle = true;
             }
-            if (!ImGui::GetIO().WantCaptureMouse &&
+            if ((!overlay_layer_ || !overlay_layer_->wants_capture_mouse()) &&
                 event.button.button == SDL_BUTTON_LEFT)
             {
                 set_mouse_captured(true);
@@ -1177,12 +1180,12 @@ void engine::render()
     {
         [[maybe_unused]] auto profiler_zone_imgui =
             profiler_zone_begin(context_.profiler, "engine::render::imgui");
-        imgui_layer_->begin_frame();
+        overlay_layer_->begin_frame();
         if (game_module_system_ != nullptr)
         {
             game_module_system_->call_ui(&context_);
         }
-        imgui_layer_->end_frame(cmd, swapchain);
+        overlay_layer_->end_frame(cmd, swapchain);
     }
 
     SDL_SubmitGPUCommandBuffer(cmd);

@@ -9,12 +9,12 @@
 namespace euengine
 {
 
-ImGuiLayer::~ImGuiLayer()
+imgui_layer::~imgui_layer()
 {
     shutdown();
 }
 
-bool ImGuiLayer::init(SDL_Window* window, SDL_GPUDevice* device)
+bool imgui_layer::init(SDL_Window* window, SDL_GPUDevice* device)
 {
     device_ = device;
 
@@ -69,7 +69,7 @@ bool ImGuiLayer::init(SDL_Window* window, SDL_GPUDevice* device)
     return true;
 }
 
-void ImGuiLayer::shutdown()
+void imgui_layer::shutdown()
 {
     if (initialized_)
     {
@@ -80,7 +80,7 @@ void ImGuiLayer::shutdown()
     }
 }
 
-void ImGuiLayer::process_event(const SDL_Event& event) const
+void imgui_layer::process_event(const SDL_Event& event)
 {
     if (input_enabled_)
     {
@@ -88,7 +88,7 @@ void ImGuiLayer::process_event(const SDL_Event& event) const
     }
 }
 
-void ImGuiLayer::begin_frame()
+void imgui_layer::begin_frame()
 {
     ImGui_ImplSDLGPU3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
@@ -100,7 +100,7 @@ void ImGuiLayer::begin_frame()
     }
 }
 
-void ImGuiLayer::end_frame(SDL_GPUCommandBuffer* cmd, SDL_GPUTexture* target)
+void imgui_layer::end_frame(SDL_GPUCommandBuffer* cmd, SDL_GPUTexture* target)
 {
     ImGui::Render();
     ImDrawData* draw_data = ImGui::GetDrawData();
@@ -120,9 +120,19 @@ void ImGuiLayer::end_frame(SDL_GPUCommandBuffer* cmd, SDL_GPUTexture* target)
     }
 }
 
-void ImGuiLayer::set_draw_callback(DrawCallback callback)
+void imgui_layer::set_draw_callback(draw_callback callback)
 {
     draw_callback_ = std::move(callback);
+}
+
+bool imgui_layer::wants_capture_mouse() const
+{
+    return ImGui::GetIO().WantCaptureMouse;
+}
+
+void* imgui_layer::get_imgui_context() const
+{
+    return ImGui::GetCurrentContext();
 }
 
 } // namespace euengine

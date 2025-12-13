@@ -21,7 +21,7 @@ namespace euengine
 
 // Forward declarations
 class shader_system;
-class ImGuiLayer;
+class i_overlay_layer;
 class render_system;
 class audio_system;
 class game_module_system;
@@ -250,7 +250,7 @@ private:
 
     // Subsystems
     std::unique_ptr<shader_system>      shader_system_;
-    std::unique_ptr<ImGuiLayer>         imgui_layer_;
+    std::unique_ptr<i_overlay_layer>    overlay_layer_;
     std::unique_ptr<render_system>      render_system_;
     std::unique_ptr<audio_system>       audio_system_;
     std::unique_ptr<game_module_system> game_module_system_;
