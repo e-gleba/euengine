@@ -1,8 +1,7 @@
 #pragma once
 
-#include "audio_system.hpp"
+#include "audio.hpp"
 #include "engine.hpp"
-#include "engine_interface.hpp"
 #include "model_loader.hpp"
 #include "overlay_layer.hpp"
 #include "profiler.hpp"
@@ -109,9 +108,9 @@ struct clear_color final
 struct engine_context final
 {
     // Subsystem interfaces (direct access, no getters needed)
-    i_render_system*      render_system      = nullptr;
+    i_renderer*           render_system      = nullptr;
     i_shader_system*      shader_system      = nullptr;
-    i_audio_system*       audio_system       = nullptr;
+    i_audio*              audio_system       = nullptr;
     i_overlay_layer*      overlay_layer      = nullptr;
     i_model_loader*       model_loader       = nullptr;
     i_game_module_system* game_module_system = nullptr;
