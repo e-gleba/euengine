@@ -104,20 +104,20 @@ struct clear_color final
 };
 
 /// Engine context passed to game callbacks
-/// Provides access to all engine subsystems through getter methods
+/// Provides direct access to all engine subsystems
 struct engine_context final
 {
-    // Subsystem interfaces (set by engine, accessed via getters)
-    i_render_system*      render_system_      = nullptr;
-    i_shader_system*      shader_system_      = nullptr;
-    i_audio_system*       audio_system_       = nullptr;
-    i_overlay_layer*      overlay_layer_      = nullptr;
-    i_model_loader*       model_loader_       = nullptr;
-    i_game_module_system* game_module_system_ = nullptr;
-    i_engine_settings*    settings_           = nullptr;
-    i_profiler*           profiler_           = nullptr;
-    entt::registry*       registry_           = nullptr;
-    void*                 imgui_ctx_          = nullptr;
+    // Subsystem interfaces (direct access, no getters needed)
+    i_render_system*      render_system      = nullptr;
+    i_shader_system*      shader_system      = nullptr;
+    i_audio_system*       audio_system       = nullptr;
+    i_overlay_layer*      overlay_layer      = nullptr;
+    i_model_loader*       model_loader       = nullptr;
+    i_game_module_system* game_module_system = nullptr;
+    i_engine_settings*    settings           = nullptr;
+    i_profiler*           profiler           = nullptr;
+    entt::registry*       registry           = nullptr;
+    void*                 imgui_ctx          = nullptr;
 
     // Frame data (updated each frame)
     display_info display      = {};
@@ -126,107 +126,7 @@ struct engine_context final
     clear_color* background   = nullptr;
     const char*  key_sequence = nullptr;
 
-    /// Get the ECS registry
-    [[nodiscard]] entt::registry* get_registry() const noexcept
-    {
-        return registry_;
-    }
-
-    /// Get the render system interface
-    [[nodiscard]] i_render_system* get_render_system() const noexcept
-    {
-        return render_system_;
-    }
-
-    /// Get the shader system interface
-    [[nodiscard]] i_shader_system* get_shader_system() const noexcept
-    {
-        return shader_system_;
-    }
-
-    /// Get the audio system interface
-    [[nodiscard]] i_audio_system* get_audio_system() const noexcept
-    {
-        return audio_system_;
-    }
-
-    /// Get the overlay layer interface
-    [[nodiscard]] i_overlay_layer* get_overlay_layer() const noexcept
-    {
-        return overlay_layer_;
-    }
-
-    /// Get the model loader interface
-    [[nodiscard]] i_model_loader* get_model_loader() const noexcept
-    {
-        return model_loader_;
-    }
-
-    /// Get the game module system interface
-    [[nodiscard]] i_game_module_system* get_game_module_system() const noexcept
-    {
-        return game_module_system_;
-    }
-
-    /// Get the engine settings interface
-    [[nodiscard]] i_engine_settings* get_settings() const noexcept
-    {
-        return settings_;
-    }
-
-    /// Get the profiler interface (may be nullptr)
-    [[nodiscard]] i_profiler* get_profiler() const noexcept
-    {
-        return profiler_;
-    }
-
-    /// Get the ImGui context (may be nullptr, implementation-specific)
-    [[nodiscard]] void* get_imgui_context() const noexcept
-    {
-        return imgui_ctx_;
-    }
-
-    /// Get display information
-    [[nodiscard]] const display_info& get_display() const noexcept
-    {
-        return display;
-    }
-
-    /// Get input state
-    [[nodiscard]] const input_state& get_input() const noexcept
-    {
-        return input;
-    }
-
-    /// Get time information
-    [[nodiscard]] const time_info& get_time() const noexcept { return time; }
-
-    /// Get background clear color (mutable, game can modify)
-    [[nodiscard]] clear_color* get_background() const noexcept
-    {
-        return background;
-    }
-
-    /// Get current key sequence for vim-like bindings (read-only)
-    [[nodiscard]] const char* get_key_sequence() const noexcept
-    {
-        return key_sequence;
-    }
-
-    // Legacy compatibility - direct accessors (deprecated, use getters)
-    [[deprecated("Use get_render_system() instead")]] i_renderer* renderer =
-        nullptr;
-    [[deprecated("Use get_shader_system() instead")]] i_shader_system* shaders =
-        nullptr;
-    [[deprecated("Use get_audio_system() instead")]] i_audio* audio = nullptr;
-    [[deprecated("Use get_settings() instead")]] i_engine_settings* settings =
-        nullptr;
-    [[deprecated("Use get_profiler() instead")]] i_profiler* profiler = nullptr;
-    [[deprecated("Use get_imgui_context() instead")]] void* imgui_ctx = nullptr;
-    [[deprecated("Use get_registry() instead")]] entt::registry* registry =
-        nullptr;
-
-    // Legacy compatibility
+    // Convenience method
     [[nodiscard]] float delta_time() const noexcept { return time.delta; }
 };
 

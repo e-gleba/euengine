@@ -134,10 +134,10 @@ void process_input()
     if (g_ctx->input.keyboard[key_f5] && !keys[3])
     {
         ui::log(2, "Hot reload (F5)");
-        if (g_ctx->shaders != nullptr)
+        if (g_ctx->shader_system != nullptr)
         {
-            g_ctx->shaders->enable_hot_reload(false);
-            g_ctx->shaders->enable_hot_reload(true);
+            g_ctx->shader_system->enable_hot_reload(false);
+            g_ctx->shader_system->enable_hot_reload(true);
         }
     }
     keys[3] = g_ctx->input.keyboard[key_f5];
@@ -155,8 +155,8 @@ void process_input()
     }
     keys[5] = g_ctx->input.keyboard[key_f1];
 
-    g_ctx->renderer->set_view_projection(cam.projection(g_ctx->display.aspect) *
-                                         cam.view());
+    g_ctx->render_system->set_view_projection(
+        cam.projection(g_ctx->display.aspect) * cam.view());
 }
 
 void animate(float t, float dt)
@@ -243,7 +243,7 @@ void init(euengine::engine_context* ctx)
     scan_audio();
     scan_scenes();
 
-    ctx->renderer->set_render_mode(euengine::render_mode::textured);
+    ctx->render_system->set_render_mode(euengine::render_mode::textured);
     apply_sky();
 
     ui::log(2,
@@ -255,34 +255,37 @@ void shutdown()
 {
     for (auto& m : g_models)
     {
-        if (m.handle != euengine::invalid_model && (g_ctx->renderer != nullptr))
+        if (m.handle != euengine::invalid_model &&
+            (g_ctx->render_system != nullptr))
         {
-            g_ctx->renderer->unload_model(m.handle);
+            g_ctx->render_system->unload_model(m.handle);
         }
     }
     g_models.clear();
 
     for (auto& a : g_audio)
     {
-        if (a.handle != euengine::invalid_music && (g_ctx->audio != nullptr))
+        if (a.handle != euengine::invalid_music &&
+            (g_ctx->audio_system != nullptr))
         {
-            g_ctx->audio->unload_music(a.handle);
+            g_ctx->audio_system->unload_music(a.handle);
         }
     }
     g_audio.clear();
 
     for (auto h : g_grids)
     {
-        if (h != euengine::invalid_mesh && (g_ctx->renderer != nullptr))
+        if (h != euengine::invalid_mesh && (g_ctx->render_system != nullptr))
         {
-            g_ctx->renderer->destroy_mesh(h);
+            g_ctx->render_system->destroy_mesh(h);
         }
     }
     g_grids.clear();
 
-    if (g_origin_axis != euengine::invalid_mesh && (g_ctx->renderer != nullptr))
+    if (g_origin_axis != euengine::invalid_mesh &&
+        (g_ctx->render_system != nullptr))
     {
-        g_ctx->renderer->destroy_mesh(g_origin_axis);
+        g_ctx->render_system->destroy_mesh(g_origin_axis);
     }
     g_origin_axis = euengine::invalid_mesh;
 
@@ -327,9 +330,9 @@ void update(euengine::engine_context* ctx)
 
     ui::g_time = ctx->time.elapsed;
 
-    ctx->renderer->set_render_mode(ui::g_wireframe
-                                       ? euengine::render_mode::wireframe
-                                       : euengine::render_mode::textured);
+    ctx->render_system->set_render_mode(ui::g_wireframe
+                                            ? euengine::render_mode::wireframe
+                                            : euengine::render_mode::textured);
 
     process_input();
     animate(ctx->time.elapsed, ctx->time.delta);
@@ -344,13 +347,13 @@ void render(euengine::engine_context* ctx)
     {
         [[maybe_unused]] auto profiler_zone_grid =
             profiler_zone_begin(ctx->profiler, "scene::render::draw_grid");
-        ctx->renderer->draw(h);
+        ctx->render_system->draw(h);
     }
 
     // Draw origin axis gizmo after grid so it appears on top
     if (g_show_origin && g_origin_axis != euengine::invalid_mesh)
     {
-        ctx->renderer->draw(g_origin_axis);
+        ctx->render_system->draw(g_origin_axis);
     }
 
     // Draw all models first
@@ -358,7 +361,7 @@ void render(euengine::engine_context* ctx)
     {
         [[maybe_unused]] auto profiler_zone_model =
             profiler_zone_begin(ctx->profiler, "scene::render::draw_model");
-        ctx->renderer->draw_model(m.handle, m.transform);
+        ctx->render_system->draw_model(m.handle, m.transform);
     }
 
     // Draw bounds for all selected objects after all models
@@ -368,9 +371,9 @@ void render(euengine::engine_context* ctx)
         if (g_selected_set.contains(static_cast<int>(i)) ||
             std::cmp_equal(i, g_selected))
         {
-            ctx->renderer->draw_bounds(g_models[i].bounds,
-                                       g_models[i].transform,
-                                       { 1.0f, 0.6f, 0.1f });
+            ctx->render_system->draw_bounds(g_models[i].bounds,
+                                            g_models[i].transform,
+                                            { 1.0f, 0.6f, 0.1f });
         }
     }
 }
@@ -480,7 +483,7 @@ model_instance* add_model(const std::string& path,
                           float              scale)
 {
     std::filesystem::path model_path(path);
-    auto                  handle = g_ctx->renderer->load_model(model_path);
+    auto                  handle = g_ctx->render_system->load_model(model_path);
     if (handle == euengine::invalid_model)
     {
         ui::log(4, "Failed to load: " + model_path.filename().string());
@@ -491,7 +494,7 @@ model_instance* add_model(const std::string& path,
     m.handle             = handle;
     m.path               = path;
     m.name               = std::filesystem::path(path).stem().string();
-    m.bounds             = g_ctx->renderer->get_bounds(handle);
+    m.bounds             = g_ctx->render_system->get_bounds(handle);
     m.transform.position = pos;
     m.transform.scale    = glm::vec3(scale);
     m.hover_base         = pos.y;
@@ -508,7 +511,7 @@ void remove_model(int idx)
     {
         return;
     }
-    g_ctx->renderer->unload_model(
+    g_ctx->render_system->unload_model(
         g_models[static_cast<std::size_t>(idx)].handle);
     g_models.erase(g_models.begin() + idx);
 
@@ -557,10 +560,10 @@ model_instance* duplicate_model(int idx)
 
     model_instance        m;
     std::filesystem::path model_path(src.path);
-    m.handle             = g_ctx->renderer->load_model(model_path);
+    m.handle             = g_ctx->render_system->load_model(model_path);
     m.path               = src.path;
     m.name               = src.name + "_copy";
-    m.bounds             = g_ctx->renderer->get_bounds(m.handle);
+    m.bounds             = g_ctx->render_system->get_bounds(m.handle);
     m.transform          = src.transform;
     m.transform.position = new_pos;
     m.animate            = src.animate;
@@ -672,16 +675,16 @@ void rebuild_grid()
 {
     for (auto h : g_grids)
     {
-        if (h != euengine::invalid_mesh && (g_ctx->renderer != nullptr))
+        if (h != euengine::invalid_mesh && (g_ctx->render_system != nullptr))
         {
-            g_ctx->renderer->destroy_mesh(h);
+            g_ctx->render_system->destroy_mesh(h);
         }
     }
     g_grids.clear();
 
     // Infinite ground grid - very large size with many subdivisions
     // Main grid - lighter color
-    g_grids.push_back(g_ctx->renderer->create_wireframe_grid(
+    g_grids.push_back(g_ctx->render_system->create_wireframe_grid(
         10000.0f,
         1000,
         { ui::g_grid_color[0], ui::g_grid_color[1], ui::g_grid_color[2] }));
@@ -691,7 +694,7 @@ void rebuild_grid()
     // z-fighting
     if (g_origin_axis != euengine::invalid_mesh)
     {
-        g_ctx->renderer->destroy_mesh(g_origin_axis);
+        g_ctx->render_system->destroy_mesh(g_origin_axis);
     }
 
     const float axis_len = 10000.0f; // Very long to appear infinite
@@ -825,7 +828,7 @@ void rebuild_grid()
                    axis_verts,
                    axis_indices);
 
-    g_origin_axis = g_ctx->renderer->create_mesh(
+    g_origin_axis = g_ctx->render_system->create_mesh(
         axis_verts, axis_indices, euengine::primitive_type::triangles);
 }
 

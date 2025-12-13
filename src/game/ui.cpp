@@ -140,10 +140,10 @@ void draw_menu(euengine::engine_context* ctx)
             if (ImGui::MenuItem("Hot Reload", "F5"))
             {
                 log(2, "Shader hot reload triggered");
-                if (ctx->shaders != nullptr)
+                if (ctx->shader_system != nullptr)
                 {
-                    ctx->shaders->enable_hot_reload(false);
-                    ctx->shaders->enable_hot_reload(true);
+                    ctx->shader_system->enable_hot_reload(false);
+                    ctx->shader_system->enable_hot_reload(true);
                 }
             }
             if (ImGui::IsItemHovered())
@@ -1004,7 +1004,7 @@ void draw_browser()
 
 void draw_audio(euengine::engine_context* ctx)
 {
-    if (!g_show_audio || (ctx->audio == nullptr))
+    if (!g_show_audio || (ctx->audio_system == nullptr))
     {
         return;
     }
@@ -1067,13 +1067,13 @@ void draw_audio(euengine::engine_context* ctx)
             {
                 if (t.handle == euengine::invalid_music)
                 {
-                    t.handle = ctx->audio->load_music(t.path);
+                    t.handle = ctx->audio_system->load_music(t.path);
                 }
                 if (t.handle != euengine::invalid_music)
                 {
-                    ctx->audio->play_music(t.handle, !t.is_sfx);
+                    ctx->audio_system->play_music(t.handle, !t.is_sfx);
                     scene::g_playing = static_cast<int>(i);
-                    ctx->audio->set_music_volume(g_volume / 100.0f);
+                    ctx->audio_system->set_music_volume(g_volume / 100.0f);
                 }
             }
             ImGui::PopStyleColor();
@@ -1081,8 +1081,8 @@ void draw_audio(euengine::engine_context* ctx)
         ImGui::EndChild();
 
         // Controls
-        bool playing = ctx->audio->is_music_playing();
-        bool paused  = ctx->audio->is_music_paused();
+        bool playing = ctx->audio_system->is_music_playing();
+        bool paused  = ctx->audio_system->is_music_paused();
 
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 6));
 
@@ -1091,7 +1091,7 @@ void draw_audio(euengine::engine_context* ctx)
         {
             if (ImGui::Button("Pause", ImVec2(bw, 28)))
             {
-                ctx->audio->pause_music();
+                ctx->audio_system->pause_music();
             }
         }
         else
@@ -1100,14 +1100,14 @@ void draw_audio(euengine::engine_context* ctx)
                                   ImVec4(0.28f, 0.55f, 0.80f, 1.0f));
             if (ImGui::Button("Play", ImVec2(bw, 28)))
             {
-                ctx->audio->resume_music();
+                ctx->audio_system->resume_music();
             }
             ImGui::PopStyleColor();
         }
         ImGui::SameLine();
         if (ImGui::Button("Stop", ImVec2(bw, 28)))
         {
-            ctx->audio->stop_music();
+            ctx->audio_system->stop_music();
             scene::g_playing = -1;
         }
         ImGui::SameLine();
@@ -1116,7 +1116,7 @@ void draw_audio(euengine::engine_context* ctx)
         ImGui::SetNextItemWidth(-1);
         if (ImGui::SliderFloat("##vol", &g_volume, 0.0f, 100.0f, "Vol: %.0f%%"))
         {
-            ctx->audio->set_music_volume(g_volume / 100.0f);
+            ctx->audio_system->set_music_volume(g_volume / 100.0f);
         }
 
         ImGui::PopStyleVar();
@@ -1489,19 +1489,19 @@ void draw_engine(euengine::engine_context* ctx)
         ImGui::TextColored(ImVec4(0.38f, 0.68f, 0.93f, 1.0f), "Shaders");
         ImGui::Separator();
 
-        if (ctx->shaders != nullptr)
+        if (ctx->shader_system != nullptr)
         {
-            bool hot = ctx->shaders->hot_reload_enabled();
+            bool hot = ctx->shader_system->hot_reload_enabled();
             if (ImGui::Checkbox("Enable Hot Reload", &hot))
             {
-                ctx->shaders->enable_hot_reload(hot);
+                ctx->shader_system->enable_hot_reload(hot);
             }
 
             if (ImGui::Button("Reload Now (F5)", ImVec2(-1, 28)))
             {
                 log(2, "Shader hot reload triggered");
-                ctx->shaders->enable_hot_reload(false);
-                ctx->shaders->enable_hot_reload(true);
+                ctx->shader_system->enable_hot_reload(false);
+                ctx->shader_system->enable_hot_reload(true);
             }
         }
 

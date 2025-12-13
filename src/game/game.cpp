@@ -169,7 +169,7 @@ GAME_API bool game_init(euengine::engine_context* ctx)
         spdlog::info("Profiler enabled");
 
         // Set profiler on engine (which will also set it on renderer)
-        ctx->get_settings()->set_profiler(profiler);
+        ctx->settings->set_profiler(profiler);
 
         // Profile this function using the interface (emits events
         // automatically)
@@ -177,8 +177,7 @@ GAME_API bool game_init(euengine::engine_context* ctx)
             profiler_zone_begin(profiler, "game_init");
     }
 
-    ImGui::SetCurrentContext(
-        static_cast<ImGuiContext*>(ctx->get_imgui_context()));
+    ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
     ui::init();
 
     scene::init(ctx);
@@ -217,7 +216,7 @@ GAME_API void game_shutdown()
 GAME_API void game_update(euengine::engine_context* ctx)
 {
     [[maybe_unused]] auto profiler_zone =
-        profiler_zone_begin(ctx->get_profiler(), "game_update");
+        profiler_zone_begin(ctx->profiler, "game_update");
 
     // Check for keyboard shortcuts
     // Check for Ctrl+O (Open file dialog) - using scan code indices
@@ -240,18 +239,17 @@ GAME_API void game_update(euengine::engine_context* ctx)
     // Update Python scripts
     python_scripting::update_scripts(ctx->time.elapsed, ctx->time.delta);
 
-    ImGui::SetCurrentContext(
-        static_cast<ImGuiContext*>(ctx->get_imgui_context()));
+    ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
     if (!ImGui::GetIO().WantCaptureMouse && ImGui::GetIO().MouseClicked[0])
     {
-        ctx->get_settings()->set_mouse_captured(true);
+        ctx->settings->set_mouse_captured(true);
     }
 }
 
 GAME_API void game_render(euengine::engine_context* ctx)
 {
     [[maybe_unused]] auto profiler_zone =
-        profiler_zone_begin(ctx->get_profiler(), "game_render");
+        profiler_zone_begin(ctx->profiler, "game_render");
 
     scene::render(ctx);
 }
@@ -259,10 +257,9 @@ GAME_API void game_render(euengine::engine_context* ctx)
 GAME_API void game_ui(euengine::engine_context* ctx)
 {
     [[maybe_unused]] auto profiler_zone =
-        profiler_zone_begin(ctx->get_profiler(), "game_ui");
+        profiler_zone_begin(ctx->profiler, "game_ui");
 
-    ImGui::SetCurrentContext(
-        static_cast<ImGuiContext*>(ctx->get_imgui_context()));
+    ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx->imgui_ctx));
     // Update time for console logging before drawing UI
     ui::g_time = ctx->time.elapsed;
     ui::draw(ctx);
