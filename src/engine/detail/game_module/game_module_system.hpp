@@ -1,7 +1,7 @@
 #pragma once
 
-#include <core-api/game.hpp>
-#include <core-api/game_module_system.hpp>
+#include <engine/game.hpp>
+#include <engine/game_module_system.hpp>
 
 #include <filesystem>
 #include <memory>

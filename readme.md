@@ -54,12 +54,12 @@ Edge-gen: SDL3 GPU engine with hot-reload architecture.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      core-api/                              │
+│                      engine/                                │
 │  (Interface Library - Header Only, No Implementation)       │
 │                                                             │
-│  • i_renderer, i_audio, i_shader_system                     │
-│  • i_model_loader, i_overlay_layer                          │
-│  • engine_context, preinit_settings                         │
+│  • #include <engine/renderer.hpp>                           │
+│  • #include <engine/audio.hpp>                              │
+│  • #include <engine/game.hpp>                               │
 │  • Pure interfaces, no dependencies on implementation       │
 └─────────────────────────────────────────────────────────────┘
                             ▲
@@ -84,9 +84,9 @@ Edge-gen: SDL3 GPU engine with hot-reload architecture.
 
 ### Design Philosophy
 
-**Clean Separation**: The `core-api/` directory contains pure interface definitions that both engine and game depend on. The engine implements these interfaces, while the game uses them without knowing implementation details.
+**Clean Separation**: The `engine/` headers contain pure interface definitions that both engine and game depend on. The engine implements these interfaces, while the game uses them without knowing implementation details.
 
-**Interface Library**: `core-api/` is header-only with no implementation. It defines:
+**Interface Library**: `engine/` headers are header-only with no implementation. They define:
 
 - Subsystem interfaces (`i_renderer`, `i_audio`, `i_shader_system`, etc.)
 - Data structures (`engine_context`, `preinit_settings`, etc.)
@@ -94,14 +94,14 @@ Edge-gen: SDL3 GPU engine with hot-reload architecture.
 
 **Engine Implementation**: The `engine.exe` executable:
 
-- Implements all interfaces from `core-api/`
+- Implements all interfaces from `engine/` headers
 - Manages SDL3, GPU, audio subsystems internally
 - Provides `engine_context` to game with subsystem pointers
 - Handles hot-reload of `game.so` without restarting
 
 **Game Module**: The `game.so` shared library:
 
-- Uses only `core-api/` interfaces
+- Uses only `engine/` header interfaces
 - No knowledge of SDL3, Vulkan, or engine internals
 - Can be reloaded at runtime (F5) without restarting engine
 - Clean, minimal API surface

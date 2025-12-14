@@ -2,8 +2,8 @@
 #include "imgui_style.hpp"
 #include "scene.hpp"
 
-#include <core-api/camera.hpp>
-#include <core-api/profiler.hpp>
+#include <engine/camera.hpp>
+#include <engine/profiler.hpp>
 #include <imgui.h>
 #include <implot.h>
 #include <spdlog/spdlog.h>

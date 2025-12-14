@@ -3,8 +3,8 @@
 #include "scene.hpp"
 #include "ui.hpp"
 
-#include <core-api/profiler.hpp>
-#include <core-api/profiling_events.hpp>
+#include <engine/profiler.hpp>
+#include <engine/profiling_events.hpp>
 
 #include <imgui.h>
 #include <spdlog/sinks/base_sink.h>

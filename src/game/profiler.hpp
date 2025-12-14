@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core-api/profiler.hpp>
+#include <engine/profiler.hpp>
 
 namespace egen
 {

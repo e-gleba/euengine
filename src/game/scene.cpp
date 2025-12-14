@@ -1,8 +1,8 @@
 #include "scene.hpp"
 #include "ui.hpp"
 
-#include <core-api/camera.hpp>
-#include <core-api/profiler.hpp>
+#include <engine/camera.hpp>
+#include <engine/profiler.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <algorithm>

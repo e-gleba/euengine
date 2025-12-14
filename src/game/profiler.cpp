@@ -1,6 +1,6 @@
 #include "profiler.hpp"
 
-#include <core-api/profiling_events.hpp>
+#include <engine/profiling_events.hpp>
 
 #ifdef TRACY_ENABLE
 #include <cstring>

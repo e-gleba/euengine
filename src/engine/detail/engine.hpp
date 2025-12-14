@@ -1,11 +1,11 @@
 #pragma once
 
-#include <core-api/game.hpp>
+#include <engine/game.hpp>
 
-#include <core-api/engine.hpp>
-#include <core-api/platform.hpp>
-#include <core-api/profiler.hpp>
-#include <core-api/window.hpp>
+#include <engine/engine.hpp>
+#include <engine/platform.hpp>
+#include <engine/profiler.hpp>
+#include <engine/window.hpp>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>

@@ -4,7 +4,7 @@
 
 #include <SDL3/SDL_gpu.h>
 
-#include <core-api/profiler.hpp>
+#include <engine/profiler.hpp>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <spdlog/spdlog.h>

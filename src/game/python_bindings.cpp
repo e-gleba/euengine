@@ -1,7 +1,7 @@
 #include "python_bindings.hpp"
 #include "ui.hpp"
 
-#include <core-api/game.hpp>
+#include <engine/game.hpp>
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <memory>

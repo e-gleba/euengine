@@ -1,8 +1,8 @@
 #define SDL_MAIN_USE_CALLBACKS
 #include "engine.hpp"
 
-#include <core-api/platform.hpp>
-#include <core-api/window.hpp>
+#include <engine/platform.hpp>
+#include <engine/window.hpp>
 
 #include <SDL3/SDL_main.h>
 #include <spdlog/spdlog.h>

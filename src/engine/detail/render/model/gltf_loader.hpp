@@ -3,7 +3,7 @@
 /// @file gltf_loader.hpp
 /// @brief glTF 2.0 model loader (supports .gltf and .glb)
 
-#include <core-api/model_loader.hpp>
+#include <engine/model_loader.hpp>
 
 #include <array>
 #include <span>

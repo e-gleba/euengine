@@ -1,6 +1,6 @@
 #pragma once
 
-#include <core-api/renderer.hpp>
+#include <engine/renderer.hpp>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>

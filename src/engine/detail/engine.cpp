@@ -5,9 +5,9 @@
 #include "render/render_system.hpp"
 #include "render/shader/shader.hpp"
 
-#include <core-api/camera.hpp>
-#include <core-api/profiler.hpp>
-#include <core-api/profiling_events.hpp>
+#include <engine/camera.hpp>
+#include <engine/profiler.hpp>
+#include <engine/profiling_events.hpp>
 
 #include <spdlog/spdlog.h>
 
