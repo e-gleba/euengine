@@ -2,7 +2,11 @@ file(GLOB_RECURSE src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 
 add_library(game_module_system STATIC ${src})
 
-target_include_directories(game_module_system PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(
+    game_module_system
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../..
+)
+target_include_directories(game_module_system PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 set_target_properties(
     game_module_system

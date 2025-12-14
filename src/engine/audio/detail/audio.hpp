@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/audio.hpp>
+#include <engine/audio/sound_system.hpp>
 
 #include <unordered_map>
 

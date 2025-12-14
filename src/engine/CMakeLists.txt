@@ -14,4 +14,8 @@ set_target_properties(
     PROPERTIES CXX_STANDARD 26 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF
 )
 
+add_subdirectory(audio)
+add_subdirectory(render)
+add_subdirectory(game_module)
+add_subdirectory(overlay)
 add_subdirectory(detail)

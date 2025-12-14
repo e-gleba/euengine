@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/renderer.hpp>
+#include <engine/render/renderer.hpp>
 
 #include <cstdint>
 #include <glm/glm.hpp>

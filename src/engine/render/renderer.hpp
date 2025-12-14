@@ -1,6 +1,6 @@
 #pragma once
 
-#include "window.hpp"
+#include <engine/window.hpp>
 
 #include <glm/glm.hpp>
 

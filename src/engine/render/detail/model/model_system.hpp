@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/model_loader.hpp>
+#include <engine/render/model_loader.hpp>
 
 #include <filesystem>
 #include <memory>

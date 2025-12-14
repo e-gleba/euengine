@@ -1,5 +1,5 @@
 #include "gltf_loader.hpp"
-#include <engine/model_loader.hpp>
+#include <engine/render/model_loader.hpp>
 
 #include <fastgltf/core.hpp>
 #include <fastgltf/glm_element_traits.hpp>

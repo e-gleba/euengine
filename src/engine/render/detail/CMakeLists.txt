@@ -8,7 +8,8 @@ file(GLOB src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 
 add_library(render_system STATIC ${src})
 
-target_include_directories(render_system PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(render_system PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../..)
+target_include_directories(render_system PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 set_target_properties(
     render_system

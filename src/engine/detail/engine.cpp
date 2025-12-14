@@ -1,9 +1,9 @@
 #include "engine.hpp"
-#include "audio/audio.hpp"
-#include "game_module/game_module_system.hpp"
-#include "overlay/imgui_layer.hpp"
-#include "render/render_system.hpp"
-#include "render/shader/shader.hpp"
+#include "audio/detail/audio.hpp"
+#include "game_module/detail/game_module_system.hpp"
+#include "overlay/detail/imgui_layer.hpp"
+#include "render/detail/render_system.hpp"
+#include "render/detail/shader/shader.hpp"
 
 #include <engine/camera.hpp>
 #include <engine/profiler.hpp>

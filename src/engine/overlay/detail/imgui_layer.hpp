@@ -1,6 +1,6 @@
 #pragma once
 
-#include <engine/overlay_layer.hpp>
+#include <engine/overlay/overlay_layer.hpp>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "audio.hpp"
-#include "engine.hpp"
-#include "model_loader.hpp"
-#include "overlay_layer.hpp"
-#include "profiler.hpp"
-#include "renderer.hpp"
-#include "window.hpp"
+#include <engine/audio/sound_system.hpp>
+#include <engine/engine.hpp>
+#include <engine/overlay/overlay_layer.hpp>
+#include <engine/profiler.hpp>
+#include <engine/render/model_loader.hpp>
+#include <engine/render/renderer.hpp>
+#include <engine/window.hpp>
 
 #include <entt/entt.hpp>
 

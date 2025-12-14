@@ -5,7 +5,7 @@
 
 #include "model/model_system.hpp"
 #include <engine/profiler.hpp>
-#include <engine/renderer.hpp>
+#include <engine/render/renderer.hpp>
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>

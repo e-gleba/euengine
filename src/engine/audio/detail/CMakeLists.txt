@@ -2,7 +2,8 @@ file(GLOB_RECURSE src CONFIGURE_DEPENDS ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 
 add_library(audio_system STATIC ${src})
 
-target_include_directories(audio_system PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(audio_system PUBLIC ${CMAKE_CURRENT_LIST_DIR}/../..)
+target_include_directories(audio_system PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 set_target_properties(
     audio_system
