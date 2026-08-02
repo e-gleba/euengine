@@ -7,6 +7,7 @@
 #include <spdlog/spdlog.h>
 
 #include <algorithm>
+#include <ranges>
 
 namespace egen
 {
@@ -67,23 +68,21 @@ void audio_system::shutdown()
 
     stop_music();
 
-    for (auto& [h, audio] : music)
+    // Destroy every loaded buffer in both handle maps, then clear them
+    const auto destroy_all = [](auto& loaded)
     {
-        if (audio != nullptr)
+        for (auto* audio : loaded | std::views::values)
         {
-            MIX_DestroyAudio(audio);
+            if (audio != nullptr)
+            {
+                MIX_DestroyAudio(audio);
+            }
         }
-    }
-    music.clear();
+        loaded.clear();
+    };
 
-    for (auto& [h, audio] : sounds)
-    {
-        if (audio != nullptr)
-        {
-            MIX_DestroyAudio(audio);
-        }
-    }
-    sounds.clear();
+    destroy_all(music);
+    destroy_all(sounds);
 
     if (music_track != nullptr)
     {

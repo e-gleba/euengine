@@ -2,9 +2,12 @@
 
 #include <glm/glm.hpp>
 
+#include <algorithm>
 #include <expected>
 #include <filesystem>
+#include <functional>
 #include <limits>
+#include <ranges>
 #include <span>
 #include <string>
 #include <vector>
@@ -217,22 +220,20 @@ struct loaded_model final
 
     [[nodiscard]] std::size_t total_vertices() const noexcept
     {
-        std::size_t total = 0;
-        for (const auto& mesh : meshes)
-        {
-            total += mesh.vertices.size();
-        }
-        return total;
+        return std::ranges::fold_left(
+            meshes | std::views::transform([](const loaded_mesh& mesh)
+                                           { return mesh.vertices.size(); }),
+            std::size_t { 0 },
+            std::plus<> {});
     }
 
     [[nodiscard]] std::size_t total_indices() const noexcept
     {
-        std::size_t total = 0;
-        for (const auto& mesh : meshes)
-        {
-            total += mesh.indices.size();
-        }
-        return total;
+        return std::ranges::fold_left(
+            meshes | std::views::transform([](const loaded_mesh& mesh)
+                                           { return mesh.indices.size(); }),
+            std::size_t { 0 },
+            std::plus<> {});
     }
 
     /// Get the primary texture path (for backward compatibility)
@@ -245,16 +246,15 @@ struct loaded_model final
             return texture_path; // Legacy field
         }
 
-        // Find first base color texture
-        for (const auto& tex : textures)
-        {
-            if (tex.type == texture_type::base_color && !tex.path.empty())
+        const auto it = std::ranges::find_if(
+            textures,
+            [](const model_texture& tex)
             {
-                return tex.path;
-            }
-        }
+                return tex.type == texture_type::base_color &&
+                       !tex.path.empty();
+            });
 
-        return {};
+        return it != textures.end() ? it->path : std::filesystem::path {};
     }
 };
 

@@ -10,9 +10,9 @@
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/spdlog.h>
 
-#include <algorithm>
 #include <memory>
 #include <mutex>
+#include <vector>
 
 namespace
 {
@@ -207,8 +207,7 @@ GAME_API void game_shutdown()
     if (g_sink)
     {
         auto& sinks = spdlog::default_logger()->sinks();
-        sinks.erase(std::remove(sinks.begin(), sinks.end(), g_sink),
-                    sinks.end());
+        std::erase(sinks, g_sink);
         g_sink.reset();
     }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
@@ -111,18 +112,21 @@ public:
         std::lock_guard<std::mutex> lock(callbacks_mutex_);
 
         // Find empty slot
-        for (std::size_t i = 0; i < k_max_callbacks; ++i)
-        {
-            if (callbacks_[i].callback == nullptr)
+        const auto it = std::ranges::find_if(
+            callbacks_,
+            [](const profiling_callback_entry& entry)
             {
-                callbacks_[i].callback = callback;
-                callbacks_[i].userdata = userdata;
-                callbacks_[i].id       = ++next_callback_id_;
-                return callbacks_[i].id;
-            }
+                return entry.callback == nullptr;
+            });
+        if (it == std::end(callbacks_))
+        {
+            return 0; // No free slots
         }
 
-        return 0; // No free slots
+        it->callback = callback;
+        it->userdata = userdata;
+        it->id       = ++next_callback_id_;
+        return it->id;
     }
 
     /// Remove a callback by ID
@@ -136,15 +140,15 @@ public:
 
         std::lock_guard<std::mutex> lock(callbacks_mutex_);
 
-        for (auto& callback : callbacks_)
-        {
-            if (callback.id == callback_id)
+        const auto it = std::ranges::find_if(
+            callbacks_,
+            [callback_id](const profiling_callback_entry& entry)
             {
-                callback.callback = nullptr;
-                callback.userdata = nullptr;
-                callback.id       = 0;
-                return;
-            }
+                return entry.id == callback_id;
+            });
+        if (it != std::end(callbacks_))
+        {
+            *it = {};
         }
     }
 
@@ -154,11 +158,11 @@ public:
     {
         std::lock_guard<std::mutex> lock(callbacks_mutex_);
 
-        for (std::size_t i = 0; i < k_max_callbacks; ++i)
+        for (const auto& entry : callbacks_)
         {
-            if (callbacks_[i].callback != nullptr)
+            if (entry.callback != nullptr)
             {
-                callbacks_[i].callback(event, callbacks_[i].userdata);
+                entry.callback(event, entry.userdata);
             }
         }
     }

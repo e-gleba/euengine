@@ -6,10 +6,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <algorithm>
+#include <array>
+#include <cctype>
 #include <cmath>
 #include <filesystem>
+#include <functional>
 #include <numbers>
 #include <ranges>
+#include <span>
+#include <string_view>
 #include <utility>
 
 namespace scene
@@ -31,6 +36,25 @@ constexpr int key_lshift = 225;
 constexpr int key_tab    = 43;
 constexpr int key_space  = 44;
 constexpr int key_grave  = 53;
+
+// Asset file-type allow-lists for the scanners (case-insensitive match)
+constexpr std::array<std::string_view, 3> model_extensions { ".obj",
+                                                             ".glb",
+                                                             ".gltf" };
+constexpr std::array<std::string_view, 2> scene_extensions { ".gltf",
+                                                             ".glb" };
+constexpr std::array<std::string_view, 3> audio_extensions { ".ogg",
+                                                             ".mp3",
+                                                             ".wav" };
+
+/// Case-insensitive extension check against an allow-list
+[[nodiscard]] bool has_extension(const std::filesystem::path&      path,
+                                 std::span<const std::string_view> exts)
+{
+    auto ext = path.extension().string();
+    std::ranges::transform(ext, ext.begin(), ::tolower);
+    return std::ranges::contains(exts, ext);
+}
 
 void setup_scene()
 {
@@ -308,20 +332,20 @@ void update(egen::engine_context* ctx)
     g_fps_history[g_frame_idx] = ctx->time.fps;
     g_frame_idx                = (g_frame_idx + 1) % history_size;
 
-    // Calculate FPS stats
-    g_min_fps     = 999.0f;
-    g_max_fps     = 0.0f;
-    float fps_sum = 0.0f;
-    for (float i : g_fps_history)
+    // Calculate FPS stats over the valid (non-zero) samples only
+    auto valid_fps =
+        g_fps_history | std::views::filter([](float f) { return f > 0.0f; });
+
+    g_min_fps = 999.0f;
+    g_max_fps = 0.0f;
+    if (!std::ranges::empty(valid_fps))
     {
-        if (i > 0.0f)
-        {
-            g_min_fps = std::min(g_min_fps, i);
-            g_max_fps = std::max(g_max_fps, i);
-            fps_sum += i;
-        }
+        const auto [lo, hi] = std::ranges::minmax_element(valid_fps);
+        g_min_fps           = *lo;
+        g_max_fps           = *hi;
     }
-    g_avg_fps = fps_sum / history_size;
+    g_avg_fps = std::ranges::fold_left(valid_fps, 0.0f, std::plus<> {}) /
+                history_size;
 
     g_draw_calls = static_cast<int>(g_models.size() + g_grids.size());
     g_triangles  = static_cast<int>(g_models.size()) * 500; // estimate
@@ -387,19 +411,17 @@ void scan_models()
         return;
     }
 
-    for (const auto& e : std::filesystem::recursive_directory_iterator(dir))
-    {
-        if (!e.is_regular_file())
-        {
-            continue;
-        }
-        auto ext = e.path().extension().string();
-        if (ext == ".obj" || ext == ".glb" || ext == ".gltf" || ext == ".OBJ" ||
-            ext == ".GLB" || ext == ".GLTF")
-        {
-            g_model_files.push_back(e.path().string());
-        }
-    }
+    auto files = std::filesystem::recursive_directory_iterator(dir) |
+                 std::views::filter(
+                     [](const auto& e)
+                     {
+                         return e.is_regular_file() &&
+                                has_extension(e.path(), model_extensions);
+                     }) |
+                 std::views::transform(
+                     [](const auto& e) { return e.path().string(); });
+
+    g_model_files = std::ranges::to<std::vector<std::string>>(files);
     std::ranges::sort(g_model_files);
     ui::log(2, "Models: " + std::to_string(g_model_files.size()));
 }
@@ -414,19 +436,17 @@ void scan_scenes()
         return;
     }
 
-    for (const auto& e : std::filesystem::recursive_directory_iterator(dir))
-    {
-        if (!e.is_regular_file())
-        {
-            continue;
-        }
-        auto ext = e.path().extension().string();
-        std::ranges::transform(ext, ext.begin(), ::tolower);
-        if (ext == ".gltf" || ext == ".glb")
-        {
-            g_scene_files.push_back(e.path().string());
-        }
-    }
+    auto files = std::filesystem::recursive_directory_iterator(dir) |
+                 std::views::filter(
+                     [](const auto& e)
+                     {
+                         return e.is_regular_file() &&
+                                has_extension(e.path(), scene_extensions);
+                     }) |
+                 std::views::transform(
+                     [](const auto& e) { return e.path().string(); });
+
+    g_scene_files = std::ranges::to<std::vector<std::string>>(files);
     std::ranges::sort(g_scene_files);
     ui::log(2, "Scene files: " + std::to_string(g_scene_files.size()));
 }
@@ -441,22 +461,21 @@ void scan_audio()
         {
             return;
         }
-        for (const auto& e : std::filesystem::directory_iterator(dir))
+
+        for (const auto& e :
+             std::filesystem::directory_iterator(dir) |
+                 std::views::filter(
+                     [](const auto& e)
+                     {
+                         return e.is_regular_file() &&
+                                has_extension(e.path(), audio_extensions);
+                     }))
         {
-            if (!e.is_regular_file())
-            {
-                continue;
-            }
-            auto ext = e.path().extension().string();
-            if (ext == ".ogg" || ext == ".mp3" || ext == ".wav" ||
-                ext == ".OGG" || ext == ".MP3" || ext == ".WAV")
-            {
-                audio_file f;
-                f.name   = e.path().filename().string();
-                f.path   = e.path().string();
-                f.is_sfx = sfx;
-                g_audio.push_back(f);
-            }
+            g_audio.push_back(audio_file {
+                .name   = e.path().filename().string(),
+                .path   = e.path().string(),
+                .is_sfx = sfx,
+            });
         }
     };
 
@@ -513,21 +532,13 @@ void remove_model(int idx)
         g_models[static_cast<std::size_t>(idx)].handle);
     g_models.erase(g_models.begin() + idx);
 
-    // Update selections - remove deleted index and adjust others
+    // Update selections - remove deleted index, shift higher indices down
     g_selected_set.erase(idx);
-    std::set<int> new_selection;
-    for (int sel : g_selected_set)
-    {
-        if (sel > idx)
-        {
-            new_selection.insert(sel - 1);
-        }
-        else if (sel < idx)
-        {
-            new_selection.insert(sel);
-        }
-    }
-    g_selected_set = std::move(new_selection);
+
+    auto shifted = g_selected_set |
+                   std::views::transform(
+                       [idx](int sel) { return sel > idx ? sel - 1 : sel; });
+    g_selected_set = std::ranges::to<std::set<int>>(shifted);
 
     if (g_selected == idx)
     {
@@ -617,8 +628,7 @@ void focus_camera_on_object(int idx)
         );
 
     // Clamp camera Z to reasonable range (15-30)
-    cam.position.z = std::max(cam.position.z, 15.0f);
-    cam.position.z = std::min(cam.position.z, 30.0f);
+    cam.position.z = std::clamp(cam.position.z, 15.0f, 30.0f);
 
     // Calculate direction from camera to object
     glm::vec3 to_obj = obj_pos - cam.position;
@@ -715,55 +725,39 @@ void rebuild_grid()
         const auto base_idx = static_cast<uint16_t>(verts.size());
 
         // Create quad vertices
-        verts.push_back({ { start + half_thick1 + half_thick2 }, color });
-        verts.push_back({ { start - half_thick1 + half_thick2 }, color });
-        verts.push_back({ { start - half_thick1 - half_thick2 }, color });
-        verts.push_back({ { start + half_thick1 - half_thick2 }, color });
-        verts.push_back({ { end + half_thick1 + half_thick2 }, color });
-        verts.push_back({ { end - half_thick1 + half_thick2 }, color });
-        verts.push_back({ { end - half_thick1 - half_thick2 }, color });
-        verts.push_back({ { end + half_thick1 - half_thick2 }, color });
+        const std::array<glm::vec3, 8> corners {
+            start + half_thick1 + half_thick2, //
+            start - half_thick1 + half_thick2, //
+            start - half_thick1 - half_thick2, //
+            start + half_thick1 - half_thick2, //
+            end + half_thick1 + half_thick2,   //
+            end - half_thick1 + half_thick2,   //
+            end - half_thick1 - half_thick2,   //
+            end + half_thick1 - half_thick2,   //
+        };
 
-        // Create quad indices (two triangles per quad)
-        // Front face
-        indices.push_back(base_idx + 0);
-        indices.push_back(base_idx + 1);
-        indices.push_back(base_idx + 2);
-        indices.push_back(base_idx + 0);
-        indices.push_back(base_idx + 2);
-        indices.push_back(base_idx + 3);
-        // Back face
-        indices.push_back(base_idx + 4);
-        indices.push_back(base_idx + 7);
-        indices.push_back(base_idx + 6);
-        indices.push_back(base_idx + 4);
-        indices.push_back(base_idx + 6);
-        indices.push_back(base_idx + 5);
-        // Side faces
-        indices.push_back(base_idx + 0);
-        indices.push_back(base_idx + 4);
-        indices.push_back(base_idx + 5);
-        indices.push_back(base_idx + 0);
-        indices.push_back(base_idx + 5);
-        indices.push_back(base_idx + 1);
-        indices.push_back(base_idx + 1);
-        indices.push_back(base_idx + 5);
-        indices.push_back(base_idx + 6);
-        indices.push_back(base_idx + 1);
-        indices.push_back(base_idx + 6);
-        indices.push_back(base_idx + 2);
-        indices.push_back(base_idx + 2);
-        indices.push_back(base_idx + 6);
-        indices.push_back(base_idx + 7);
-        indices.push_back(base_idx + 2);
-        indices.push_back(base_idx + 7);
-        indices.push_back(base_idx + 3);
-        indices.push_back(base_idx + 3);
-        indices.push_back(base_idx + 7);
-        indices.push_back(base_idx + 4);
-        indices.push_back(base_idx + 3);
-        indices.push_back(base_idx + 4);
-        indices.push_back(base_idx + 0);
+        for (const auto& pos : corners)
+        {
+            verts.push_back({ { pos }, color });
+        }
+
+        // Create quad indices (two triangles per quad), offset by base_idx
+        static constexpr std::array<uint16_t, 36> quad_indices {
+            0, 1, 2, 0, 2, 3, // Front face
+            4, 7, 6, 4, 6, 5, // Back face
+            0, 4, 5, 0, 5, 1, // Side faces
+            1, 5, 6, 1, 6, 2, //
+            2, 6, 7, 2, 7, 3, //
+            3, 7, 4, 3, 4, 0, //
+        };
+
+        indices.append_range(quad_indices |
+                             std::views::transform(
+                                 [base_idx](uint16_t i)
+                                 {
+                                     return static_cast<uint16_t>(base_idx +
+                                                                  i);
+                                 }));
     };
 
     std::vector<egen::vertex> axis_verts;
