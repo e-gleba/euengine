@@ -1,0 +1,102 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  extends: [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticPrefixFixDepsChoreOthers"
+  ],
+
+  // ─── General ──────────────────────────────────────────────────────────────
+  timezone: "UTC",
+  schedule: ["before 8am on monday"],
+  prConcurrentLimit: 10,
+  prHourlyLimit: 3,
+  labels: ["dependencies"],
+  commitMessagePrefix: "chore(deps):",
+  commitMessageAction: "update",
+  commitMessageTopic: "{{depName}}",
+  commitMessageExtra: "to {{newValue}}",
+
+  // ─── Vulnerability alerts ─────────────────────────────────────────────────
+  vulnerabilityAlerts: {
+    enabled: true,
+    schedule: ["at any time"],
+    labels: ["dependencies", "security"]
+  },
+
+  // ─── GitHub Actions ───────────────────────────────────────────────────────
+  // Owned by Dependabot (see dependabot.yml) — disabled here to avoid
+  // duplicate PRs for the same ecosystem.
+  "github-actions": {
+    enabled: false
+  },
+
+  // NOTE: no automerge rules — this repo has no CI workflows yet, so there
+  // is nothing to gate automatic merges on. Merge dep PRs manually.
+
+  // ─── CPM (CMake Package Manager) ──────────────────────────────────────────
+  // Deps live in cmake/cpm/*-config.cmake via cpmaddpackage() calls using the
+  // GITHUB_REPOSITORY shorthand (the GIT_REPOSITORY URL form is also matched).
+  // Patterns tolerate cmake-format's one-argument-per-line layout and any
+  // argument order: [^)]*? spans intermediate args but never crosses the
+  // closing paren of a cpmaddpackage() block.
+  customManagers: [
+    // ── CPM.cmake bootstrap (cmake/cpm-config.cmake) ────────────────────────
+    // Matches: set(CPM_DOWNLOAD_VERSION 0.42.0)
+    {
+      customType: "regex",
+      description: "Update CPM.cmake bootstrap version",
+      managerFilePatterns: ["/(^|/)cpm-config\\.cmake$/"],
+      matchStrings: [
+        "set\\(CPM_DOWNLOAD_VERSION\\s+(?<currentValue>[^\\s)]+)\\s*\\)"
+      ],
+      depNameTemplate: "cpm-cmake/CPM.cmake",
+      datasourceTemplate: "github-releases",
+      extractVersionTemplate: "^v?(?<version>.+)$"
+    },
+
+    // ── Version-tag pins: GIT_TAG v1.17.0 / 1.0.2 / VER-2-14-3 ─────────────
+    {
+      customType: "regex",
+      description: "Update CPM deps pinned by GIT_TAG (version tags)",
+      managerFilePatterns: ["/(^|/)cmake/cpm/[^/]+-config\\.cmake$/"],
+      matchStrings: [
+        // GIT_TAG before repository
+        "GIT_TAG\\s+(?<currentValue>v?[A-Za-z]*\\d[^\\s\"]*?)(?:\\s|\\))[^)]*?(?:GIT_REPOSITORY\\s+https://github\\.com/|GITHUB_REPOSITORY\\s+)(?<depName>[^\\s\"]+?)(?:\\.git)?(?:\\s|\\))",
+        // repository before GIT_TAG
+        "(?:GIT_REPOSITORY\\s+https://github\\.com/|GITHUB_REPOSITORY\\s+)(?<depName>[^\\s\"]+?)(?:\\.git)?(?:\\s|\\))[^)]*?GIT_TAG\\s+(?<currentValue>v?[A-Za-z]*\\d[^\\s\"]*?)(?:\\s|\\))"
+      ],
+      datasourceTemplate: "github-tags",
+      extractVersionTemplate: "^(?:v|VER-)?(?<version>.+)$"
+    },
+
+    // ── VERSION pins (implies GIT_TAG v{VERSION}) — e.g. imgui ──────────────
+    {
+      customType: "regex",
+      description: "Update CPM deps pinned by VERSION field",
+      managerFilePatterns: ["/(^|/)cmake/cpm/[^/]+-config\\.cmake$/"],
+      matchStrings: [
+        "VERSION\\s+(?<currentValue>\\d[^\\s\"]*?)(?:\\s|\\))[^)]*?(?:GIT_REPOSITORY\\s+https://github\\.com/|GITHUB_REPOSITORY\\s+)(?<depName>[^\\s\"]+?)(?:\\.git)?(?:\\s|\\))",
+        "(?:GIT_REPOSITORY\\s+https://github\\.com/|GITHUB_REPOSITORY\\s+)(?<depName>[^\\s\"]+?)(?:\\.git)?(?:\\s|\\))[^)]*?VERSION\\s+(?<currentValue>\\d[^\\s\"]*?)(?:\\s|\\))"
+      ],
+      datasourceTemplate: "github-tags",
+      extractVersionTemplate: "^v?(?<version>.+)$"
+    },
+
+    // ── Commit-SHA pins: GIT_TAG 7bddff8c01f5fb931c3cb73d4aa8e66d303d97bc ───
+    // Tracks the default-branch HEAD via the git-refs datasource.
+    {
+      customType: "regex",
+      description: "Update CPM deps pinned to commit SHA",
+      managerFilePatterns: ["/(^|/)cmake/cpm/[^/]+-config\\.cmake$/"],
+      matchStrings: [
+        "GIT_TAG\\s+(?<currentDigest>[0-9a-f]{7,40})(?:\\s|\\))[^)]*?(?:GIT_REPOSITORY\\s+https://github\\.com/|GITHUB_REPOSITORY\\s+)(?<depName>[^\\s\"]+?)(?:\\.git)?(?:\\s|\\))",
+        "(?:GIT_REPOSITORY\\s+https://github\\.com/|GITHUB_REPOSITORY\\s+)(?<depName>[^\\s\"]+?)(?:\\.git)?(?:\\s|\\))[^)]*?GIT_TAG\\s+(?<currentDigest>[0-9a-f]{7,40})(?:\\s|\\))"
+      ],
+      datasourceTemplate: "git-refs",
+      depNameTemplate: "https://github.com/{{{depName}}}.git",
+      currentValueTemplate: "main"
+    }
+  ]
+}
